@@ -22,6 +22,14 @@ The local page is ID 179741; confirm the page ID on the other installation.
 An empty page continues to use the original standalone layout until imported,
 so deploying the code first does not leave the existing live page blank.
 
+In the target site's WordPress admin, open **Pages**, edit the REX 3D page in the
+backend editor and click **Import editable RD500N content** in the notice at
+the top. This imports the builder content and resets that page's overrides to
+Inherit. Then open the Uncode builder. The import button is only shown for an
+empty page, and the action checks your page-editing permission and a nonce.
+
+Alternatively, run this from the WordPress root in a terminal:
+
 ```sh
 php wp-content/themes/uncode-child/tools/import-rd500n.php --page-id=179741
 ```

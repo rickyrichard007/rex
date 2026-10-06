@@ -2,6 +2,8 @@
 
 defined('ABSPATH') || exit;
 
+require_once __DIR__ . '/inc/import-rd500n.php';
+
 function rex_3d_views()
 {
     return [
