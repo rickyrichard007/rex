@@ -1,0 +1,8 @@
+---
+deployment:
+  tasks:
+    # Live WordPress path from the Duplicator screenshot. Confirm in cPanel before deploying.
+    - export DEPLOYPATH="/home1/oneas336/hub.oneasyloan.com/rex"
+    # Copy each custom directory only when the destination is an existing WordPress site.
+    - test -f "$DEPLOYPATH/wp-config.php" && /bin/mkdir -p "$DEPLOYPATH/wp-content/themes/uncode-child" && /bin/cp -R wp-content/themes/uncode-child/. "$DEPLOYPATH/wp-content/themes/uncode-child/"
+    - test -f "$DEPLOYPATH/wp-config.php" && /bin/mkdir -p "$DEPLOYPATH/rex-3d" && /bin/cp -R rex-3d/. "$DEPLOYPATH/rex-3d/"
