@@ -6,7 +6,6 @@ const assetBase = new URL('.', document.currentScript.src);
 const pageRoot = document.querySelector('#rex-3d-page') || document.body;
 const $ = s => pageRoot.querySelector(s), $$ = s => [...pageRoot.querySelectorAll(s)];
 const canvas = $('#gl');
-if (!canvas) return;
 const gl = canvas.getContext('webgl2', { antialias: true, alpha: true, premultipliedAlpha: true });
 const STILL = /[?&]still/.test(location.search);
 const reduceMotion = STILL || matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -149,11 +148,7 @@ function resize(){
 }
 
 /* ---------------- camera choreography ---------------- */
-const sections=$$('[data-cam]');
-if (!sections.length) {
-  $('#stage').dataset.cam='0,0.60,0.05,-38,11,3.7,-0.30';
-  sections.push($('#stage'));
-}
+const sections=$$('main section');
 const keys=sections.map(s=>{const v=s.dataset.cam.split(',').map(Number);return{t:[v[0],v[1],v[2]],az:v[3],el:v[4],dist:v[5],shift:v[6]}});
 const cam={t:[...keys[0].t],az:keys[0].az,el:keys[0].el,dist:keys[0].dist,shift:keys[0].shift};
 let activeIdx=0, sectionT=0;
@@ -184,8 +179,8 @@ canvas.addEventListener('pointerup',endDrag);canvas.addEventListener('pointercan
 
 let motorOn=false, cutterAngle=0, cutterSpeed=0;
 const rpmEl=$('#rpm'),stateEl=$('#state'),led=$('#led');
-$('#btnStart')?.addEventListener('click',()=>{motorOn=true;led?.classList.add('on');if(stateEl)stateEl.textContent=stateEl.dataset.running||'RUNNING';});
-$('#btnStop')?.addEventListener('click',()=>{motorOn=false;led?.classList.remove('on');if(stateEl)stateEl.textContent=stateEl.dataset.stopped||'STOPPED';});
+$('#btnStart').addEventListener('click',()=>{motorOn=true;led.classList.add('on');stateEl.textContent='RUNNING';});
+$('#btnStop').addEventListener('click',()=>{motorOn=false;led.classList.remove('on');stateEl.textContent='STOPPED';});
 
 /* hotspots (model space, metres) */
 const HS=[
@@ -196,25 +191,16 @@ const HS=[
   {id:'chute',label:'Stainless chute',p:[0.20,0.45,0.20],d:1.6},
   {id:'base',label:'Base plate',p:[0.08,0.012,0.18],d:1.6},
 ];
-const parts=$$('#steps li,[data-rex-part]');
-const hot=$('#hot'); HS.forEach(h=>{
-  const part=parts.find(el=>el.dataset.hs===h.id);
-  const heading=part?.querySelector('h1,h2,h3,h4,h5,h6,b');
-  h.label=heading?.textContent.trim()||(pageRoot.classList.contains('rex-3d-builder')?'':h.label);
-  h.el=document.createElement('div');h.el.className='hs';
-  const dot=document.createElement('i'),label=document.createElement('span');label.textContent=h.label;
-  h.el.append(dot,label);hot.appendChild(h.el);
-  if(!h.label)h.el.hidden=true;
-});
+const hot=$('#hot'); HS.forEach(h=>{h.el=document.createElement('div');h.el.className='hs';h.el.innerHTML=`<i></i><span>${h.label}</span>`;hot.appendChild(h.el);});
 let focusHS=null;
-parts.forEach(li=>{
-  const go=()=>{focusHS=focusHS===li.dataset.hs?null:li.dataset.hs;parts.forEach(x=>{x.classList.toggle('on',x.dataset.hs===focusHS);if(x.hasAttribute('aria-pressed'))x.setAttribute('aria-pressed',String(x.dataset.hs===focusHS));});HS.forEach(h=>h.el.classList.toggle('on',h.id===focusHS));};
+$$('#steps li').forEach(li=>{
+  const go=()=>{focusHS=focusHS===li.dataset.hs?null:li.dataset.hs;$$('#steps li').forEach(x=>x.classList.toggle('on',x.dataset.hs===focusHS));HS.forEach(h=>h.el.classList.toggle('on',h.id===focusHS));};
   li.addEventListener('click',go); li.tabIndex=0; li.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go();}});
 });
 
 /* rail + reveal + counters */
 const rail=$('#rail');
-sections.forEach((s,i)=>{if(!s.id||!s.dataset.label)return;const a=document.createElement('a');a.href='#'+s.id;a.dataset.section=i;a.textContent=s.dataset.label;a.appendChild(document.createElement('i'));rail.appendChild(a);});
+sections.forEach(s=>{const a=document.createElement('a');a.href='#'+s.id;a.innerHTML=`${s.dataset.label}<i></i>`;rail.appendChild(a);});
 const railLinks=[...rail.children], navLinks=$$('nav a');
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);
   e.target.querySelectorAll?.('[data-count]').forEach(countUp); if(e.target.dataset?.count)countUp(e.target);}}),{threshold:.2});
@@ -237,14 +223,14 @@ function frame(t){
   cam.t=cam.t.map((v,i)=>lerp(v,tc.t[i],k)); cam.az=lerp(cam.az,tc.az,k); cam.el=lerp(cam.el,tc.el,k); cam.dist=lerp(cam.dist,tc.dist,k); cam.shift=lerp(cam.shift,tc.shift,k);
   if(!drag){dragAz*=Math.pow(0.12,dt);dragEl*=Math.pow(0.12,dt);}
   const sec=sections[activeIdx];
-  if(activeIdx!==lastIdx){lastIdx=activeIdx;railLinks.forEach(a=>a.classList.toggle('on',Number(a.dataset.section)===activeIdx));
+  if(activeIdx!==lastIdx){lastIdx=activeIdx;railLinks.forEach((a,i)=>a.classList.toggle('on',i===activeIdx));
     navLinks.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+sec.id));
-    pageRoot.classList.toggle('show-hs',!!sec.dataset.hs); $('#stage').classList.toggle('dim',sec.id==='contact'); $('#dragTip').style.opacity=activeIdx===0?'':'0'; if(!sec.dataset.hs&&focusHS){focusHS=null;[...parts,...$$('.hs')].forEach(x=>{x.classList.remove('on');if(x.hasAttribute('aria-pressed'))x.setAttribute('aria-pressed','false');});}
+    pageRoot.classList.toggle('show-hs',!!sec.dataset.hs); $('#stage').classList.toggle('dim',sec.id==='contact'); $('#dragTip').style.opacity=activeIdx===0?'':'0'; if(!sec.dataset.hs&&focusHS){focusHS=null;$$('#steps li,.hs').forEach(x=>x.classList.remove('on'));}
     $('#stage').style.setProperty('--gx',cam.shift<-0.05?'68%':cam.shift>0.05?'32%':'50%');}
   // cutter
   const want=motorOn?9:(sec.dataset.spin?2.2:0);
   cutterSpeed=lerp(cutterSpeed,want,1-Math.exp(-dt*(motorOn?1.2:0.9)));
-  cutterAngle+=cutterSpeed*dt; if(rpmEl)rpmEl.textContent=Math.round(cutterSpeed/9*100)+'%';
+  cutterAngle+=cutterSpeed*dt; rpmEl.textContent=Math.round(cutterSpeed/9*100)+'%';
   const sig=[cam.t[0],cam.t[1],cam.t[2],cam.az,cam.el,cam.dist,cam.shift,dragAz,dragEl,cutterAngle,canvas.width,canvas.height,reduceMotion?0:Math.round(now/33)].map(v=>v.toFixed(4)).join();
   if(sig!==lastSig||dirty){lastSig=sig;dirty=false;draw(tc);}
   requestAnimationFrame(frame);
@@ -297,7 +283,7 @@ function draw(){
     document.title=document.title; window.__ready=true;
   }catch(err){
     console.error(err);
-    $('#loader').textContent=$('#rex-3d-viewer')?.dataset.errorText||'3D view unavailable on this device.';
+    $('#loader').innerHTML='<div>3D view unavailable on this device.<br><br><span style="color:#98a2a6;letter-spacing:.05em;text-transform:none">'+err.message+'</span></div>';
     setTimeout(()=>$('#loader').classList.add('done'),2500); window.__ready=true;
   }
 })();
