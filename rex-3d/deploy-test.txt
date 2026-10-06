@@ -1,2 +1,0 @@
-REX deployment test: version 1
-This file was created locally for the GitHub-to-cPanel deployment test.
