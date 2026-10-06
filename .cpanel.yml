@@ -1,8 +1,17 @@
 ---
 deployment:
   tasks:
-    # Live WordPress path from the Duplicator screenshot. Confirm in cPanel before deploying.
-    - export DEPLOYPATH="/home1/oneas336/hub.oneasyloan.com/rex"
-    # Copy each custom directory only when the destination is an existing WordPress site.
-    - test -f "$DEPLOYPATH/wp-config.php" && /bin/mkdir -p "$DEPLOYPATH/wp-content/themes/uncode-child" && /bin/cp -R wp-content/themes/uncode-child/. "$DEPLOYPATH/wp-content/themes/uncode-child/"
-    - test -f "$DEPLOYPATH/wp-config.php" && /bin/mkdir -p "$DEPLOYPATH/rex-3d" && /bin/cp -R rex-3d/. "$DEPLOYPATH/rex-3d/"
+    # Run the copy commands together and stop immediately if any command fails.
+    - >-
+      set -eu;
+      export DEPLOYPATH="/home1/oneas336/hub.oneasyloan.com/rex";
+      echo "Deploying custom files to: $DEPLOYPATH";
+      if [ ! -f "$DEPLOYPATH/wp-config.php" ]; then
+      echo "ERROR: wp-config.php not found at $DEPLOYPATH. Check the live WordPress path." >&2;
+      exit 1;
+      fi;
+      /bin/mkdir -p "$DEPLOYPATH/wp-content/themes/uncode-child" "$DEPLOYPATH/rex-3d";
+      /bin/cp -R wp-content/themes/uncode-child/. "$DEPLOYPATH/wp-content/themes/uncode-child/";
+      echo "Child theme copied.";
+      /bin/cp -R rex-3d/. "$DEPLOYPATH/rex-3d/";
+      echo "3D files copied. Deployment completed.";
