@@ -1,0 +1,19 @@
+/*
+!/.gitignore
+!/README.md
+!/.cpanel.yml
+
+!/wp-content/
+/wp-content/*
+!/wp-content/themes/
+/wp-content/themes/*
+!/wp-content/themes/uncode-child/
+
+!/rex-3d/
+
+# Exclude secrets and generated files inside tracked folders
+.env
+.env.*
+*.sql
+*.zip
+node_modules/

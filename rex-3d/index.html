@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RD500N Coconut Deshelling Machine | REX Industries</title>
+<meta name="description" content="RD500N coconut deshelling machine by REX Industries. 500–600 nuts per hour, 1 HP 3-phase motor, High Speed Steel cutter blades, operable by unskilled labour. Made in Negombo, Sri Lanka.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0c0d; --bg2:#101416; --panel:rgba(16,20,22,.72); --line:rgba(255,255,255,.09); --line2:rgba(255,255,255,.16);
+  --text:#eef1f2; --muted:#98a2a6; --dim:#5f686c; --red:#e2382d; --red2:#ff5a4d; --green:#27b562; --steel:#c9d0d3;
+  --maxw:1320px; --gut:clamp(16px,4vw,56px);
+  --font:"Archivo",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:17px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+::selection{background:var(--red);color:#fff}
+
+/* stage */
+#stage{position:fixed;inset:0;z-index:0;
+  background:radial-gradient(60% 55% at var(--gx,68%) 45%,#2a3134 0%,#161a1c 45%,var(--bg) 80%);transition:background .6s}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:pan-y}
+#gl.drag{cursor:grabbing}
+#gl{transition:opacity .8s}#stage.dim #gl{opacity:.28}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+/* header */
+header{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;
+  padding:18px var(--gut);background:linear-gradient(var(--bg) 0%,rgba(10,12,13,0) 100%)}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-weight:800;letter-spacing:.02em}
+.brand .mark{width:30px;height:30px;border:2px solid var(--steel);border-radius:50%;display:grid;place-items:center;font-size:13px;font-stretch:115%}
+.brand small{display:block;font-weight:500;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+nav{display:flex;gap:26px;font-size:14px;color:var(--muted)}
+nav a{text-decoration:none;transition:color .2s}nav a:hover,nav a.on{color:var(--text)}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:12px 20px;border-radius:999px;font:600 14px var(--font);letter-spacing:.02em;text-decoration:none;border:1px solid var(--line2);background:transparent;color:var(--text);cursor:pointer;transition:all .2s}
+.btn:hover{border-color:var(--text)}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}.btn.primary:hover{background:var(--red2);border-color:var(--red2)}
+header .btn{padding:9px 16px}
+
+/* progress rail */
+.rail{position:fixed;right:var(--gut);top:50%;transform:translateY(-50%);z-index:15;display:flex;flex-direction:column;gap:14px}
+.rail a{display:flex;align-items:center;justify-content:flex-end;gap:10px;text-decoration:none;font:500 11px var(--mono);color:transparent;transition:color .3s}
+.rail a i{width:8px;height:8px;border-radius:50%;border:1px solid var(--dim);transition:all .3s}
+.rail a:hover{color:var(--muted)}
+.rail a.on i{background:var(--red);border-color:var(--red);transform:scale(1.3)}
+
+/* sections */
+main{position:relative;z-index:5}
+section{min-height:100vh;display:flex;align-items:center;padding:120px var(--gut)}
+.wrap{width:100%;max-width:var(--maxw);margin:0 auto;display:flex}
+.right .wrap{justify-content:flex-end}
+.card{max-width:470px;pointer-events:auto}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.eyebrow b{color:var(--red);font-weight:500}
+h1{font-size:clamp(46px,7.2vw,104px);line-height:.92;font-weight:850;font-stretch:112%;letter-spacing:-.01em;margin-bottom:26px}
+h1 span{display:block;font-size:.36em;font-stretch:100%;font-weight:600;color:var(--muted);letter-spacing:.01em;margin-top:14px;line-height:1.1}
+h2{font-size:clamp(34px,4.4vw,58px);line-height:1;font-weight:800;font-stretch:108%;letter-spacing:-.01em;margin-bottom:22px}
+p.lead{font-size:clamp(17px,1.35vw,20px);color:#c7cdd0;max-width:44ch}
+p+p{margin-top:14px}
+.muted{color:var(--muted)}
+.hero .card{max-width:620px}
+.cta{display:flex;flex-wrap:wrap;gap:12px;margin-top:34px}
+.stats{display:grid;grid-template-columns:repeat(3,auto);gap:10px 40px;margin-top:44px;padding-top:26px;border-top:1px solid var(--line)}
+.stat b{display:block;font-size:clamp(26px,2.6vw,36px);font-weight:800;font-stretch:110%;line-height:1}
+.stat span{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.scrollhint{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);font:500 11px var(--mono);letter-spacing:.2em;color:var(--dim);text-transform:uppercase;display:flex;flex-direction:column;align-items:center;gap:10px}
+.scrollhint i{width:1px;height:42px;background:linear-gradient(var(--dim),transparent);animation:drip 2s infinite}
+@keyframes drip{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+blockquote{margin-top:28px;padding:18px 20px;border-left:2px solid var(--red);background:var(--panel);backdrop-filter:blur(8px);font-size:15px;color:#c7cdd0}
+blockquote cite{display:block;margin-top:10px;font:500 11px var(--mono);letter-spacing:.1em;color:var(--dim);font-style:normal;text-transform:uppercase}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.chip{padding:7px 12px;border:1px solid var(--line2);border-radius:999px;font:500 12px var(--mono);color:var(--muted)}
+
+/* control station */
+.station{margin-top:30px;display:flex;align-items:center;gap:22px;padding:20px 22px;border-radius:14px;background:linear-gradient(160deg,#a9bcc2,#7f959c);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 20px 40px rgba(0,0,0,.4);width:max-content;max-width:100%}
+.pb{width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;display:grid;place-items:center;font:800 16px var(--font);color:rgba(255,255,255,.9);transition:transform .08s,box-shadow .2s;position:relative}
+.pb::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:3px solid #1a1d1f;opacity:.85}
+.pb.start{background:radial-gradient(circle at 35% 30%,#5fe08f,var(--green) 55%,#137a3d)}
+.pb.stop{background:radial-gradient(circle at 35% 30%,#ff7b70,var(--red) 55%,#98150e)}
+.pb:active{transform:translateY(2px) scale(.97)}
+.station .readout{font:500 12px var(--mono);color:#12181a;line-height:1.5;min-width:120px}
+.station .readout b{display:block;font-size:22px;font-family:var(--font);font-weight:800}
+.led{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3a4144;margin-right:6px;vertical-align:1px}
+.led.on{background:#3cff85;box-shadow:0 0 10px #3cff85}
+
+/* steps */
+.steps{list-style:none;margin-top:22px;display:grid;gap:8px;counter-reset:s}
+.steps li{counter-increment:s;display:grid;grid-template-columns:44px 1fr;gap:14px;align-items:start;padding:10px 14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);backdrop-filter:blur(8px);cursor:pointer;transition:border-color .2s}
+.steps li:hover{border-color:var(--line2)}.steps li.on{border-color:var(--red);background:rgba(226,56,45,.08)}
+.steps li::before{content:"0" counter(s);font:500 12px var(--mono);color:var(--red);padding-top:3px}
+.steps b{display:block;font-weight:700;font-size:15px}
+@media (min-width:901px){.steps{grid-template-columns:1fr 1fr}}
+.steps span{font-size:13px;color:var(--muted);line-height:1.4;display:block}
+
+/* hotspots */
+#hot{position:fixed;inset:0;z-index:4;pointer-events:none}
+.hs{position:absolute;left:0;top:0;opacity:0;transition:opacity .4s;pointer-events:none}
+body.show-hs .hs{opacity:1}
+.hs i{position:absolute;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;background:var(--red);box-shadow:0 0 0 4px rgba(226,56,45,.25)}
+.hs i::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--red);animation:ping 2s infinite}
+@keyframes ping{to{transform:scale(2.4);opacity:0}}
+.hs span{position:absolute;left:18px;top:-11px;white-space:nowrap;font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:6px;background:rgba(10,12,13,.85);border:1px solid var(--line2)}
+.hs.on span{border-color:var(--red);color:#fff}
+
+/* specs */
+.specs .wrap{flex-direction:column}
+.specgrid{display:grid;grid-template-columns:minmax(0,470px) 1fr;gap:40px;align-items:start}
+table{width:100%;border-collapse:collapse;margin-top:10px;background:var(--panel);backdrop-filter:blur(10px);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+td{padding:14px 18px;border-bottom:1px solid var(--line);font-size:15px;vertical-align:top}
+tr:last-child td{border-bottom:none}
+td:first-child{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);width:44%;padding-top:17px}
+td b{font-weight:700}
+.dims{justify-self:end;display:flex;gap:14px;flex-wrap:wrap;align-self:end}
+.dim{padding:18px 20px;min-width:118px;border:1px solid var(--line);border-radius:14px;background:var(--panel);backdrop-filter:blur(10px)}
+.dim span{font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.dim b{display:block;font-size:40px;font-weight:800;font-stretch:110%;line-height:1.05}
+.dim b small{font-size:.45em;color:var(--muted);font-weight:600;margin-left:3px}
+
+/* use / range */
+.countries{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:22px;font:500 13px var(--mono);color:var(--muted)}
+.countries span::before{content:"→ ";color:var(--red)}
+.range{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:26px}
+.range div{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--panel);backdrop-filter:blur(8px);font-weight:600;font-size:15px}
+.range div small{display:block;font:500 11px var(--mono);color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px}
+.range div.me{border-color:var(--red)}
+
+/* contact */
+.contact{min-height:auto;padding-bottom:60px}
+.contact .wrap{flex-direction:column}
+.cgrid{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:14px;margin-top:40px}
+.cbox{padding:24px;border:1px solid var(--line);border-radius:16px;background:var(--panel);backdrop-filter:blur(12px)}
+.cbox h3{font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+.cbox a{display:block;text-decoration:none;font-size:18px;font-weight:600;margin-bottom:6px}
+.cbox a:hover{color:var(--red2)}
+.cbox p{color:#c7cdd0}
+footer{position:relative;z-index:5;padding:30px var(--gut) 40px;border-top:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;font:500 12px var(--mono);color:var(--dim);background:var(--bg)}
+footer a{text-decoration:none;color:var(--muted);margin-left:18px}footer a:hover{color:var(--text)}
+
+/* reveal */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .9s cubic-bezier(.2,.7,.2,1),transform .9s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+.rv.d1{transition-delay:.08s}.rv.d2{transition-delay:.16s}.rv.d3{transition-delay:.24s}
+
+/* loader */
+#loader{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;transition:opacity .8s,visibility .8s}
+#loader.done{opacity:0;visibility:hidden}
+#loader div{text-align:center;font:500 12px var(--mono);letter-spacing:.2em;color:var(--muted);text-transform:uppercase}
+#loader svg{width:70px;height:70px;margin-bottom:18px;animation:spin 1.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.drag-tip{position:fixed;z-index:6;right:calc(var(--gut) + 30px);bottom:26px;font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--dim);transition:opacity .4s}
+
+@media (max-width:900px){
+  nav,.rail,.drag-tip{display:none}
+  section{align-items:flex-end;padding:80px var(--gut) 60px;min-height:115vh}
+  .hero{align-items:flex-end;min-height:150vh}
+  .wrap,.right .wrap{justify-content:flex-start}
+  .card{max-width:none;padding:22px;border-radius:18px;background:rgba(10,12,13,.78);backdrop-filter:blur(14px);border:1px solid var(--line)}
+  .hero .card{background:linear-gradient(transparent,rgba(10,12,13,.9) 30%);border:none;padding:22px 0}
+  .stats{grid-template-columns:repeat(3,1fr);gap:10px 16px}
+  .specgrid{grid-template-columns:1fr}
+  .dims{justify-self:stretch}.dim{flex:1;min-width:0;padding:14px}.dim b{font-size:28px}
+  .cgrid{grid-template-columns:1fr}
+  .specs .card,.contact .card{background:none;border:none;padding:0;backdrop-filter:none}
+  footer a{margin:0 14px 0 0}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.rv{transition:none;opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div id="loader"><div><svg viewBox="0 0 70 70" fill="none" stroke="#e2382d" stroke-width="3"><circle cx="35" cy="35" r="28" stroke="#2a3134"/><path d="M35 7a28 28 0 0 1 28 28"/></svg><br>Loading RD500N</div></div>
+
+<div id="stage"><canvas id="gl" aria-label="Interactive 3D model of the RD500N coconut deshelling machine. Drag to rotate."></canvas></div>
+<div class="grain"></div>
+<div id="hot"></div>
+<div class="drag-tip" id="dragTip">Drag to rotate ↻</div>
+
+<header>
+  <a class="brand" href="#top"><span class="mark">R</span><span>REX Industries<small>Coconut processing</small></span></a>
+  <nav>
+    <a href="#problem">Why</a><a href="#cutter">Cutter</a><a href="#power">Power</a><a href="#anatomy">Anatomy</a><a href="#specs">Specs</a><a href="#contact">Contact</a>
+  </nav>
+  <a class="btn primary" href="#contact">Get a quote</a>
+</header>
+
+<div class="rail" id="rail"></div>
+
+<main>
+  <!-- HERO -->
+  <section class="hero" id="top" data-cam="0,0.60,0.05, -38,11,3.7, -0.30" data-label="Intro">
+    <div class="wrap"><div class="card">
+      <div class="eyebrow rv"><b>●</b> Model RD500N · Single cutter</div>
+      <h1 class="rv d1">Coconut Deshelling Machine<span>Takes the hard shell off, without the skilled hands.</span></h1>
+      <p class="lead rv d2">A motor-driven deshelling station from REX Industries, Negombo. It is built for cottage industry and commercial lines, and can be run even by unskilled labour.</p>
+      <div class="cta rv d2"><a class="btn primary" href="#contact">Request a quote</a><a class="btn" href="#specs">View specifications</a></div>
+      <div class="stats rv d3">
+        <div class="stat"><b data-count="600" data-from="500">500–600</b><span>Nuts / hour</span></div>
+        <div class="stat"><b>1 HP</b><span>3-phase motor</span></div>
+        <div class="stat"><b>1 yr</b><span>Warranty</span></div>
+      </div>
+    </div></div>
+    <div class="scrollhint">Scroll<i></i></div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section class="right" id="problem" data-cam="0.10,0.72,0.08, -62,22,1.95, 0.32" data-label="Why">
+    <div class="wrap"><div class="card">
+      <div class="eyebrow rv"><b>01</b> The problem</div>
+      <h2 class="rv d1">Skilled deshellers are hard to find.</h2>
+      <p class="lead rv d2">Dehusked coconuts must have their hard shell removed before they can be processed. That job has always needed skilled workers, and skilled labour is getting harder to find.</p>
+      <p class="muted rv d2">The RD500N does the hard part mechanically, so any operator on your floor can keep the line moving.</p>
+      <blockquote class="rv d3">“This machine can be operated even an unskilled labour.”<cite>REX Industries, RD500N product notes</cite></blockquote>
+    </div></div>
+  </section>
+
+  <!-- CUTTER -->
+  <section id="cutter" data-cam="0.06,0.89,0.05, -12,6,0.92, -0.34" data-label="Cutter" data-spin="1">
+    <div class="wrap"><div class="card">
+      <div class="eyebrow rv"><b>02</b> Cutter head</div>
+      <h2 class="rv d1">High Speed Steel cutter blades.</h2>
+      <p class="lead rv d2">The rotating cutter head is fitted with blades made from High Speed Steel, the same steel used for machine-shop cutting tools, so the edges hold up through shell after shell.</p>
+      <p class="muted rv d2">A brushed stainless guard encloses the head. Only the working edge is exposed at the opening.</p>
+      <div class="chips rv d3"><span class="chip">HSS blades</span><span class="chip">Single cutter</span><span class="chip">Enclosed guard</span></div>
+    </div></div>
+  </section>
+
+  <!-- POWER -->
+  <section class="right" id="power" data-cam="-0.06,1.02,0.00, 58,16,1.35, 0.30" data-label="Power">
+    <div class="wrap"><div class="card">
+      <div class="eyebrow rv"><b>03</b> Drive &amp; controls</div>
+      <h2 class="rv d1">1 HP, three-phase. Two buttons.</h2>
+      <p class="lead rv d2">A 1 hp, 3-phase (420 V) motor drives the cutter. The push-button station mounted on top keeps start and stop within the operator’s reach.</p>
+      <p class="muted rv d2">Try it: start the motor and watch the cutter head.</p>
+      <div class="station rv d3" role="group" aria-label="Motor control demo">
+        <button class="pb start" id="btnStart" aria-label="Start motor">I</button>
+        <button class="pb stop" id="btnStop" aria-label="Stop motor">O</button>
+        <div class="readout"><span class="led" id="led"></span><span id="state">STOPPED</span><b id="rpm">0%</b>cutter speed</div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ANATOMY -->
+  <section id="anatomy" data-cam="0.02,0.66,0.05, -48,14,2.55, -0.28" data-label="Anatomy" data-hs="1">
+    <div class="wrap"><div class="card" style="max-width:600px">
+      <div class="eyebrow rv"><b>04</b> Anatomy</div>
+      <h2 class="rv d1">Simple enough for anyone to run.</h2>
+      <p class="lead rv d2">Every part of the RD500N sits on one heavy steel column. Tap a part to find it on the machine.</p>
+      <ol class="steps rv d3" id="steps">
+        <li data-hs="switch"><div><b>Push-button station</b><span>Green start, red stop, mounted at the top.</span></div></li>
+        <li data-hs="motor"><div><b>1 HP drive motor</b><span>3-phase, 420 V, sits behind the guard.</span></div></li>
+        <li data-hs="cutter"><div><b>HSS cutter head</b><span>Enclosed in a stainless guard.</span></div></li>
+        <li data-hs="lever"><div><b>Hand lever</b><span>Steel lever and handle at the cutter opening.</span></div></li>
+        <li data-hs="chute"><div><b>Stainless chute</b><span>Wide sheet-steel chute below the cutter.</span></div></li>
+        <li data-hs="base"><div><b>Braced base plate</b><span>Gusseted column on a bolt-down plate.</span></div></li>
+      </ol>
+    </div></div>
+  </section>
+
+  <!-- SPECS -->
+  <section class="specs" id="specs" data-cam="0.0,0.60,0.0, -90,6,3.35, -0.02" data-label="Specs" data-turn="1">
+    <div class="wrap">
+      <div class="eyebrow rv"><b>05</b> Technical specifications</div>
+      <div class="specgrid">
+        <div class="card">
+          <h2 class="rv d1">RD500N at a glance.</h2>
+          <table class="rv d2">
+            <tr><td>Type</td><td><b>Single cutter</b></td></tr>
+            <tr><td>Capacity</td><td><b>500–600</b> average nuts per hour</td></tr>
+            <tr><td>Electrical power</td><td><b>1 hp</b>, 3 phase (420 V)</td></tr>
+            <tr><td>Cutter blades</td><td>High Speed Steel</td></tr>
+            <tr><td>Operation</td><td>Motor operated</td></tr>
+            <tr><td>Stations</td><td>Single or two deshelling stations</td></tr>
+            <tr><td>Weight</td><td><b>64 kg</b></td></tr>
+            <tr><td>Warranty</td><td><b>1 year</b></td></tr>
+          </table>
+        </div>
+        <div class="dims rv d3">
+          <div class="dim"><span>Width</span><b data-count="55">55<small>cm</small></b></div>
+          <div class="dim"><span>Length</span><b data-count="44">44<small>cm</small></b></div>
+          <div class="dim"><span>Height</span><b data-count="119">119<small>cm</small></b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USE -->
+  <section class="right" id="use" data-cam="0.0,0.62,0.0, -150,14,3.0, 0.30" data-label="Use">
+    <div class="wrap"><div class="card">
+      <div class="eyebrow rv"><b>06</b> Where it works</div>
+      <h2 class="rv d1">From cottage industry to commercial lines.</h2>
+      <p class="lead rv d2">The RD500N suits small family producers and commercial processors alike, and is available with single or two deshelling stations.</p>
+      <p class="muted rv d2">REX ships internationally. Its machines are in use in:</p>
+      <div class="countries rv d3"><span>USA</span><span>Canada</span><span>Europe</span><span>Australia</span><span>India</span><span>Indonesia</span><span>Tanzania</span><span>Philippines</span><span>South Africa</span><span>Solomon Islands</span><span>Mexico</span><span>Malaysia</span></div>
+    </div></div>
+  </section>
+
+  <!-- RANGE -->
+  <section id="range" data-cam="0.0,0.62,0.05, 20,10,3.3, -0.30" data-label="Range">
+    <div class="wrap"><div class="card" style="max-width:560px">
+      <div class="eyebrow rv"><b>07</b> The coconut line</div>
+      <h2 class="rv d1">Part of a complete processing range.</h2>
+      <p class="lead rv d2">REX Industries has been building industrial machinery in Sri Lanka since 1977. The RD500N works alongside the rest of the REX coconut range.</p>
+      <div class="range rv d3">
+        <div class="me"><small>Deshelling</small>RD500N Deshelling Machine</div>
+        <div><small>Oil</small>RL-12 Virgin Coconut Oil Expeller</div>
+        <div><small>Oil</small>RL20N Oil Expeller</div>
+        <div><small>Oil</small>RL8 Table Top Oil Expeller</div>
+        <div><small>Grinding</small>RC55SS Wet Grinder</div>
+        <div><small>Shredding</small>RWS45 / RWS50 Farm Waste Shredder</div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact" id="contact" data-cam="0.0,0.60,0.05, -38,10,3.9, -0.35" data-label="Contact">
+    <div class="wrap">
+      <div class="card" style="max-width:720px">
+        <div class="eyebrow rv"><b>08</b> Talk to REX</div>
+        <h2 class="rv d1">Put the RD500N on your line.</h2>
+        <p class="lead rv d2">Ask for pricing, a single- or two-station setup, or international shipping. REX backs every machine with after-sales service.</p>
+        <div class="cta rv d2"><a class="btn primary" href="mailto:sales@rexgroup.lk?subject=RD500N%20Coconut%20Deshelling%20Machine%20enquiry">Email sales@rexgroup.lk</a><a class="btn" href="https://1drv.ms/b/s!ArX0oO7Haev8vCDl2QsgGz5Ri8PE?e=cqNaje" target="_blank" rel="noopener">Download product manual ↗</a></div>
+      </div>
+      <div class="cgrid">
+        <div class="cbox rv"><h3>Call</h3><a href="tel:+94774767881">+94 77 476 7881</a><a href="tel:+94312233117">+94 31 223 3117</a><a href="tel:+94312233315">+94 31 223 3315</a><a href="tel:+94312223136">+94 31 222 3136</a></div>
+        <div class="cbox rv d1"><h3>Visit</h3><p><b>Rex Industries (Pvt) Ltd</b><br>451/2 Chilaw Road<br>Negombo 11500<br>Sri Lanka</p></div>
+        <div class="cbox rv d2"><h3>Follow</h3><a href="https://www.facebook.com/rexgroup.lk" target="_blank" rel="noopener">Facebook ↗</a><a href="https://www.instagram.com/rex_industries_pvt_ltd/" target="_blank" rel="noopener">Instagram ↗</a><a href="https://www.linkedin.com/company/rex-industries-pvt-ltd/" target="_blank" rel="noopener">LinkedIn ↗</a><a href="https://www.youtube.com/user/negomborex/videos" target="_blank" rel="noopener">YouTube ↗</a></div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer><span>© Rex Industries (Pvt) Ltd · Since 1977 · Negombo, Sri Lanka</span><span><a href="https://rexgroup.lk/" target="_blank" rel="noopener">rexgroup.lk</a><a href="#top">Back to top ↑</a></span></footer>
+
+<script src="app.js"></script>
+</body>
+</html>
