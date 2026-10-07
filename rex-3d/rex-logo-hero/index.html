@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REX — Interactive 3D Logo</title>
+
+<style>
+  /* ---------- Colour and size values used in several places ---------- */
+  :root {
+    --red: #ff2a1a;
+    --red-dim: rgba(255, 42, 26, 0.35);
+    --ink: #f3e9e7;
+    --panel: rgba(12, 4, 4, 0.62);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;            /* the page is one full screen, no scrolling */
+    background: #050101;
+    color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  }
+
+  /* ---------- Layer 1: the background photo ---------- */
+  #bg {
+    position: fixed;
+    inset: -4%;                  /* slightly bigger than the screen so it can slide (parallax) without showing edges */
+    background: url("bg-01.png") center / cover no-repeat;
+    transition: transform 0.25s ease-out;
+    will-change: transform;
+  }
+
+  /* ---------- Layer 2: dark vignette so the logo stands out ---------- */
+  #shade {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse at center, rgba(120, 10, 5, 0.28) 0%, rgba(0, 0, 0, 0) 45%),
+      radial-gradient(ellipse at center, rgba(0, 0, 0, 0.15) 30%, rgba(0, 0, 0, 0.82) 100%);
+  }
+
+  /* ---------- Layer 3: the 3D canvas ---------- */
+  #stage {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    /* a soft red glow around whatever is drawn on the (transparent) canvas */
+    filter: drop-shadow(0 0 14px rgba(120, 10, 5, 0.25));
+    opacity: 0;
+    transition: opacity 1.2s ease;
+  }
+  #stage.ready { opacity: 1; }
+
+  #status {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(243, 233, 231, 0.75);
+    pointer-events: none;
+    text-align: center;
+    padding: 0 24px;
+  }
+</style>
+</head>
+
+<body>
+  <div id="bg"></div>
+  <div id="shade"></div>
+  <canvas id="stage"></canvas>
+
+  <div id="status">Loading…</div>
+
+  <!-- Keep the 3D library beside this scene so it works on localhost and after deployment. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three.module.min.js",
+      "three/addons/": "./vendor/"
+    }
+  }
+  </script>
+  <!-- The outlines of the logo (traced from rex_logo.png), as lists of points -->
+  <script src="logo-shapes.js"></script>
+  <!-- Your five texture maps, stored as text so the 3D graphics may use them -->
+  <script src="textures-data.js"></script>
+
+  <script type="module">
+  /* =====================================================================
+     REX interactive 3D logo
+     Read top to bottom: each numbered section does one job.
+     ===================================================================== */
+
+  // Bring in the 3D library and three helpers from it.
+  import * as THREE from 'three';
+  import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'; // soft reflections for metal
+
+  const canvas   = document.getElementById('stage');
+  const statusEl = document.getElementById('status');
+
+  /* ---------- 1. Renderer: the thing that draws 3D onto the <canvas> ---------- */
+  const renderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: true,   // smooth jagged edges
+    alpha: true        // transparent canvas, so the CSS background photo shows through
+  });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // sharp on HiDPI screens, capped for performance
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;           // film-like handling of very bright (glowing) colours
+  renderer.toneMappingExposure = 1.15;
+
+  /* ---------- 2. Scene and camera ---------- */
+  const scene  = new THREE.Scene();
+  // A narrow field of view (like a zoom lens from far away) keeps the logo looking flat and straight.
+  // A wide one (it was 35) shows the left half and right half from opposite sides, which looks "bent".
+  const camera = new THREE.PerspectiveCamera(12, 1, 0.1, 1000);
+
+  /* ---------- 3. Lighting ----------
+     The model is made of metal. Metal has almost no colour of its own: it
+     shows reflections. So we give it something to reflect (an "environment")
+     and add a few coloured lights that match the red background.            */
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 1.1;
+
+  const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);   // main light, front-top-left
+  keyLight.position.set(-6, 8, 12);
+  scene.add(keyLight);
+
+  const redRim = new THREE.PointLight(0xff2010, 900, 0, 2);     // red light from behind-right
+  redRim.position.set(14, 4, -8);
+  scene.add(redRim);
+
+  const redFill = new THREE.PointLight(0xff3018, 350, 0, 2);    // weaker red light from below-left
+  redFill.position.set(-10, -6, 8);
+  scene.add(redFill);
+
+  // A point light above the top-right corner of the logo. A point light shines in every
+  // direction from one spot, like a bare bulb, and gets weaker with distance.
+  const cornerLight = new THREE.PointLight(0xfff1e6, 800, 0, 2);  // (colour, brightness, range 0 = unlimited, falloff)
+  cornerLight.position.set(8, 5, 5);   // x: right of the logo, y: above it, z: in front of it (towards you)
+  scene.add(cornerLight);
+
+  /* ---------- 4. Build the 3D logo from the flat logo's outlines ----------
+     logo-shapes.js holds the outlines of rex_logo.png as lists of [x, y] points.
+     We turn each outline into a flat 2D shape, then "extrude" it: push it
+     backwards to give it thickness, like a cookie cutter pressed through dough. */
+
+  /* Paint two small pictures in memory (no image files needed) and turn them into textures:
+       roughness : mostly dark grey (= glossy) with lighter scratch lines (= rough)
+       glow      : black (= no glow) with a few bright scratch lines (= glowing)          */
+  function makeScratchTextures() {
+    const SIZE = 1024;
+    let seed = 7;                                   // fixed seed -> the same scratches on every visit
+    const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+    function paint(background, count, minAlpha, maxAlpha, maxLength) {
+      const c = document.createElement('canvas');
+      c.width = c.height = SIZE;
+      const g = c.getContext('2d');
+      g.fillStyle = background;
+      g.fillRect(0, 0, SIZE, SIZE);
+      g.strokeStyle = '#ffffff';
+      for (let i = 0; i < count; i++) {
+        const x = rand() * SIZE, y = rand() * SIZE;
+        const angle  = rand() * Math.PI * 2;
+        const length = 20 + rand() * maxLength;
+        g.globalAlpha = minAlpha + rand() * (maxAlpha - minAlpha);
+        g.lineWidth   = 0.6 + rand() * 1.4;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + Math.cos(angle) * length, y + Math.sin(angle) * length);
+        g.stroke();
+      }
+      const texture = new THREE.CanvasTexture(c);
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.flipY = false;                        // .glb models expect textures the other way up
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy(); // keeps thin lines sharp at an angle
+      return texture;
+    }
+
+    const roughness = paint('#2b2b2b', 520, 0.15, 0.75, 260); // many fine scratches
+    const glow      = paint('#000000',  70, 0.35, 1.00, 420); // a few long glowing ones
+    glow.colorSpace = THREE.SRGBColorSpace;         // this one is a colour picture, the other is just data
+    return { roughness, glow };
+  }
+
+  // The fixed tilt of the whole logo, in radians (1 radian is about 57 degrees).
+  const TILT_Y = 0.38;   // turn around the vertical axis: + pushes the RIGHT end back, - pushes the LEFT end back
+  const TILT_X = -0.06;  // lean around the horizontal axis: - leans the top slightly away from you, + towards you
+
+  const logo = new THREE.Group();  // wrapper we can move/tilt as one unit
+  scene.add(logo);
+
+  let gear = null;                 // will hold the cogwheel part of the model
+  let fitDistance = 20;            // camera distance at which the whole logo fits
+  const modelSize = new THREE.Vector3(12, 4, 1);
+
+  const DEPTH = 0.8;               // how thick the logo is, front to back
+  const RIM   = 0.06;              // thickness of the glowing rim just behind the front face
+
+  // Three materials (a material = how a surface looks).
+  /* YOUR TEXTURES (from the Texrures folder).
+     A texture here is not a colour picture: it is a grey "map" that tells the material,
+     point by point, how to behave.
+       roughness map : dark = smooth and glossy,   light = rough and dull
+       metalness map : black = painted (not metal), white = bare metal showing through
+       normal map    : which way the surface leans at each point (fine scratches and dents)
+       height map    : light = raised, dark = sunk
+       AO map        : dark = crevices that surrounding light does not reach
+     Together they describe red paint over steel, chipped and scratched in places.
+
+     Why textures-data.js? A page opened by double-click may DISPLAY an image file but is
+     not allowed to load it into 3D graphics (a browser security rule). Images stored as
+     text inside a script file are allowed, so that file holds copies of the maps.   */
+  function loadMap(dataUrl) {
+    const texture = new THREE.TextureLoader().load(dataUrl);
+    // Mirrored repeat: every second tile is flipped, so the edges of the picture always
+    // meet themselves and no seam line shows where one tile ends and the next begins.
+    texture.wrapS = texture.wrapT = THREE.MirroredRepeatWrapping;
+    texture.repeat.set(TEXTURE_SCALE, TEXTURE_SCALE);
+    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();   // stays sharp when seen at an angle
+    return texture;
+  }
+  const TEXTURE_SCALE = 0.17;   // 0.17 = one copy of the texture covers about 6 units (the logo is 12 wide)
+
+  const userTextures = window.REX_TEXTURES;
+  let faceMaterial;
+  let roughnessMap = null;
+
+  if (userTextures) {
+    roughnessMap = loadMap(userTextures.roughness);
+
+    faceMaterial = new THREE.MeshStandardMaterial({   // FRONT FACES: weathered red paint over metal
+      color: 0x8e0c07,                                // a darker red (it was 0xe3120a)
+
+      roughness: 1,                                   // multiplied by the map, so the map decides
+      roughnessMap,                                   // dark = glossy paint, light = dull worn patches
+
+      // Metalness is now one fixed value for the whole face. Your metalness MAP is mostly black
+      // (= "not metal"), and a map can only lower this number, never raise it, so it is not used.
+      metalness: 1,                                   // 0 = paint or plastic, 1 = pure metal
+
+      // Normal map: the blue-purple picture. Each pixel says which way the surface "leans"
+      // at that point, so flat faces catch the light as if they had real scratches and dents.
+      normalMap: loadMap(userTextures.normal),
+      normalScale: new THREE.Vector2(0.8, 0.8),       // strength of that effect (0 = flat, 1 = full)
+
+      // Ambient occlusion: darkens pits and crevices where surrounding light would not reach.
+      aoMap: loadMap(userTextures.ao),
+      aoMapIntensity: 0.8,
+
+      // Height map, used as a "bump": light = raised, dark = sunk. It adds to the normal map.
+      // (True displacement would move the surface itself, but these faces are flat sheets with
+      //  points only round their edges, so there is nothing in the middle to move.)
+      bumpMap: loadMap(userTextures.height),
+      bumpScale: 0.6,
+
+      envMapIntensity: 1.0                            // strength of the reflections of the surroundings (lower = less shine)
+    });
+  } else {
+    // Fallback if textures-data.js is missing: the scratch texture the page paints itself.
+    roughnessMap = makeScratchTextures().roughness;
+    roughnessMap.repeat.set(0.2, 0.2);
+    faceMaterial = new THREE.MeshStandardMaterial({
+      color: 0x8e0c07, metalness: 1, roughness: 1, roughnessMap,
+      bumpMap: roughnessMap, bumpScale: 0.35, envMapIntensity: 0.45
+    });
+  }
+
+  const glowMaterial = new THREE.MeshStandardMaterial({   // THIN RIM around each shape: now a plain dark red edge, no glow and no polish
+    color: 0x7a0a06, emissive: 0x000000, emissiveIntensity: 0, metalness: 1, roughness: 0.38, envMapIntensity: 0.9
+  });
+  const sideMaterial = new THREE.MeshStandardMaterial({   // SIDES (the depth behind the red faces): dark red
+    color: 0x4a0604,          // a deep red, darker than the front faces (0xe3120a)
+    emissive: 0x120100,       // a faint red self-glow so it stays red in shadow instead of going black
+    metalness: 1,             // metal; its reflections are tinted by the dark red colour above
+    roughness: userTextures ? 1 : 0.42,
+    roughnessMap: userTextures ? roughnessMap : null,   // the same wear pattern continues round the sides
+    envMapIntensity: 0.55     // how strongly it reflects the bright surroundings (1 = full, 0 = none)
+  });
+
+  // Give the BACK PART (the side walls, the back, and the thin rim) the same surface detail
+  // as the front face. The textures are already loaded for the face, so we reuse the same
+  // ones here: sharing a texture between materials costs no extra memory or loading time.
+  // Each material keeps its own colour, so the sides stay darker than the front.
+  if (userTextures) {
+    for (const material of [sideMaterial, glowMaterial]) {
+      material.roughnessMap = roughnessMap;               // glossy and worn patches
+      material.roughness = 1;                             // let the map decide
+      material.normalMap = faceMaterial.normalMap;        // fine scratches and dents
+      material.normalScale.set(0.8, 0.8);
+      material.aoMap = faceMaterial.aoMap;                // darker pits and crevices
+      material.aoMapIntensity = 0.8;
+      material.bumpMap = faceMaterial.bumpMap;            // chips raised or sunk
+      material.bumpScale = 0.6;
+    }
+  }
+
+  // Turn a list of [x, y] points into something Three.js can draw.
+  const toVectors = (points) => points.map(([x, y]) => new THREE.Vector2(x, y));
+
+  function buildPart(data) {
+    // 1. The flat outline, with its holes cut out.
+    const shape = new THREE.Shape(toVectors(data.outer));
+    for (const hole of data.holes) shape.holes.push(new THREE.Path(toVectors(hole)));
+
+    // 2. The dark body: the outline pushed back to give the part its thickness.
+    const body = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(shape, { depth: DEPTH - RIM, bevelEnabled: false }),
+      sideMaterial
+    );
+    body.position.z = -DEPTH / 2;
+
+    // 3. A thin plate on the front. An extruded shape has two surface groups:
+    //    group 0 = the flat faces, group 1 = the side walls. Giving an ARRAY of
+    //    two materials paints the face red and its thin wall as the glowing rim.
+    const plate = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(shape, { depth: RIM, bevelEnabled: false }),
+      [faceMaterial, glowMaterial]
+    );
+    plate.position.z = DEPTH / 2 - RIM;
+
+    const part = new THREE.Group();
+    part.name = data.name;
+    part.add(body, plate);
+    part.position.set(data.position[0], data.position[1], 0);
+    return part;
+  }
+
+  const shapes = window.REX_LOGO_SHAPES;
+  if (shapes) {
+    for (const data of shapes.parts) {
+      const part = buildPart(data);
+      logo.add(part);
+      if (data.name === 'Gear') gear = part;   // remember the cogwheel so we can spin it
+    }
+    modelSize.set(shapes.width, shapes.height, DEPTH);
+    statusEl.style.display = 'none';
+    canvas.classList.add('ready');
+  } else {
+    statusEl.textContent = 'Could not load logo-shapes.js (it must be in the same folder).';
+  }
+
+  /* ---------- 5. (removed) The camera is fixed: it always looks straight at the logo ---------- */
+
+  /* ---------- 6. Keep everything fitted to the window ---------- */
+  function fitCamera(resetView) {
+    const w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+
+    // Trigonometry: how far back must the camera be so the logo's width AND height fit?
+    const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+    const distForHeight = (modelSize.y / 2) / Math.tan(halfFov);
+    const distForWidth  = (modelSize.x / 2) / (Math.tan(halfFov) * camera.aspect);
+    fitDistance = Math.max(distForHeight, distForWidth) * 1.45;  // 1.45 = breathing room
+    if (resetView) {
+      camera.position.set(0, 0, fitDistance);
+      camera.lookAt(0, 0, 0);          // aim the camera at the centre of the logo
+    }
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', () => fitCamera(true));
+  fitCamera(true);
+
+  /* ---------- 7. Cogwheel state ---------- */
+  const BASE_SPEED = 0.9;   // radians per second at 1× (about one full turn every 7 seconds)
+  let speedMultiplier = 1;  // change this number to make the cogwheel faster or slower
+  let direction = 1;        // 1 or -1
+  let lastMoveTime = -Infinity; // when the cursor last moved (milliseconds since the page opened)
+  let spin = 0;                 // 0 = stopped, 1 = full speed; eases between the two
+  const STOP_DELAY = 120;       // ms without movement before the cogwheel starts slowing down
+  let hoverBoost = 1;       // smoothly rises while the mouse is over the cogwheel
+
+  /* ---------- 8. Hover / click on the cogwheel ----------
+     A "raycaster" shoots an invisible line from the camera through the mouse
+     position and tells us which 3D object it hits.                          */
+  const raycaster = new THREE.Raycaster();
+  const pointer   = new THREE.Vector2(2, 2);   // start off-screen
+  let overGear = false;
+  let downX = 0, downY = 0;
+
+  function isPointerOnGear() {
+    if (!gear) return false;
+    raycaster.setFromCamera(pointer, camera);
+    return raycaster.intersectObject(gear, true).length > 0;
+  }
+
+  window.addEventListener('pointermove', (e) => {
+    lastMoveTime = performance.now();   // remember: the cursor moved just now
+
+    // Convert pixels to the -1..+1 range the raycaster expects.
+    pointer.x =  (e.clientX / window.innerWidth)  * 2 - 1;
+    pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+    // Slide the background a little, opposite to the mouse = feeling of depth (parallax).
+    document.getElementById('bg').style.transform =
+      `translate(${-pointer.x * 1.2}%, ${pointer.y * 1.2}%)`;
+  });
+
+  canvas.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; });
+  canvas.addEventListener('pointerup', (e) => {
+    // Only count it as a click if the pointer barely moved (not a drag).
+    const moved = Math.hypot(e.clientX - downX, e.clientY - downY);
+    pointer.x =  (e.clientX / window.innerWidth)  * 2 - 1;
+    pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    if (moved < 6 && isPointerOnGear()) direction *= -1;
+  });
+
+  /* ---------- 8b. Grinder sparks ----------
+     Each spark is a short glowing line (a streak) that flies off the rim of the
+     spinning cogwheel, is pulled down by gravity, cools from orange to red, and fades out.
+     We keep a fixed pool of sparks and recycle the dead ones instead of creating
+     new objects all the time (that would be slow).                              */
+  const SPARK_COUNT   = 500;     // size of the pool = the most sparks alive at once
+  const SPARK_RATE    = 320;     // sparks thrown per second at full cogwheel speed
+  const SPARK_IDLE    = 0;       // fraction still thrown while the cogwheel is stopped (0 = none)
+  const SPARK_GRAVITY = 3;       // how hard the sparks are pulled down
+  const SPARK_TRAIL   = 0.045;   // streak length = speed x this
+
+  // The sparks are thrown from all around the rim of the cogwheel, just behind the logo.
+  const gearData    = shapes ? shapes.parts.find((p) => p.name === 'Gear') : null;
+  const gearCentreX = gearData ? gearData.position[0] : -4;
+  const gearCentreY = gearData ? gearData.position[1] : 0;
+  // Radius of the cogwheel = the furthest outline point from its centre (the tooth tips).
+  const gearRadius  = gearData ? Math.max(...gearData.outer.map(([x, y]) => Math.hypot(x, y))) : 1.9;
+  const SPARK_Z     = -0.75;       // behind the logo (the logo's back is at -0.4)
+
+  const sparkPos  = new Float32Array(SPARK_COUNT * 3);  // x, y, z of each spark
+  const sparkVel  = new Float32Array(SPARK_COUNT * 3);  // its speed in x, y, z
+  const sparkLife = new Float32Array(SPARK_COUNT);      // seconds left to live (0 = dead / free)
+  const sparkSpan = new Float32Array(SPARK_COUNT);      // its total lifetime
+
+  // What gets drawn: 2 points (head + tail) per spark, each with a position and a colour.
+  const linePositions = new Float32Array(SPARK_COUNT * 6);
+  const lineColors    = new Float32Array(SPARK_COUNT * 6);
+  const sparkGeometry = new THREE.BufferGeometry();
+  sparkGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+  sparkGeometry.setAttribute('color',    new THREE.BufferAttribute(lineColors, 3));
+
+  const sparks = new THREE.LineSegments(sparkGeometry, new THREE.LineBasicMaterial({
+    vertexColors: true,                  // use the per-point colours above
+    // Pure "add light" blending. The canvas is see-through (so the background photo shows),
+    // which means every pixel has a colour AND an opacity. The ready-made AdditiveBlending also
+    // raised the opacity wherever a spark was drawn. A fading spark has almost no colour left,
+    // so it became a solid near-black mark covering the background: the dark patches.
+    // These settings add the spark's colour and leave the opacity completely alone.
+    blending: THREE.CustomBlending,
+    blendSrc: THREE.OneFactor,           // colour: use all of the spark's colour...
+    blendDst: THREE.OneFactor,           // ...added on top of what is already there
+    blendSrcAlpha: THREE.ZeroFactor,     // opacity: take nothing from the spark...
+    blendDstAlpha: THREE.OneFactor,      // ...keep what was there
+    transparent: true,
+    depthWrite: false                    // sparks never hide each other
+  }));
+  sparks.frustumCulled = false;          // always draw (the points move every frame)
+  logo.add(sparks);                      // child of the logo, so the sparks tilt with it
+
+  let sparkDebt = 0;                     // fractional sparks still owed from earlier frames
+  let nextSpark = 0;                     // where to look for a free slot in the pool
+
+  function launchSpark(amount) {
+    for (let tries = 0; tries < SPARK_COUNT; tries++) {
+      const i = nextSpark;
+      nextSpark = (nextSpark + 1) % SPARK_COUNT;
+      if (sparkLife[i] > 0) continue;                    // still alive, try the next slot
+
+      // Pick a random spot on the rim of the cogwheel.
+      const a      = Math.random() * Math.PI * 2;            // angle around the wheel
+      const radius = gearRadius * (0.86 + Math.random() * 0.12);
+      const cosA = Math.cos(a), sinA = Math.sin(a);
+      sparkPos[i*3]   = gearCentreX + cosA * radius;
+      sparkPos[i*3+1] = gearCentreY + sinA * radius;
+      sparkPos[i*3+2] = SPARK_Z - Math.random() * 0.3;
+
+      // Throw it along the TANGENT: the direction the rim is moving at that spot
+      // (like mud flying off a spinning tyre), plus a little push outward.
+      // (sinA, -cosA) is the clockwise tangent; "direction" flips it when the wheel is reversed.
+      const speed   = (3 + Math.random() * 6) * (0.4 + 0.6 * amount);  // faster wheel = faster sparks
+      const outward = 0.25 + Math.random() * 0.45;
+      sparkVel[i*3]   = ( sinA * direction + cosA * outward) * speed;
+      sparkVel[i*3+1] = (-cosA * direction + sinA * outward) * speed;
+      sparkVel[i*3+2] = -Math.random() * 0.8;                // drift a little further back
+      sparkSpan[i] = sparkLife[i] = 0.3 + Math.random() * 0.6;
+      return;
+    }
+  }
+
+  function updateSparks(delta, amount) {
+    // 1. Launch new sparks. "amount" is 0..1 (how fast the cogwheel is turning).
+    if (amount < 0.02) amount = SPARK_IDLE;             // wheel (almost) stopped: no new sparks
+    sparkDebt += SPARK_RATE * amount * delta;
+    while (sparkDebt >= 1) { launchSpark(amount); sparkDebt -= 1; }
+
+    // 2. Move every live spark and write its streak into the drawing buffers.
+    for (let i = 0; i < SPARK_COUNT; i++) {
+      const p = i * 3, l = i * 6;
+      if (sparkLife[i] <= 0) {                           // dead: make the line zero-length and black
+        for (let k = 0; k < 6; k++) { linePositions[l+k] = 0; lineColors[l+k] = 0; }
+        continue;
+      }
+      sparkLife[i] -= delta;
+      sparkVel[p+1] -= SPARK_GRAVITY * delta;            // gravity bends the path downward
+      sparkPos[p]   += sparkVel[p]   * delta;
+      sparkPos[p+1] += sparkVel[p+1] * delta;
+      sparkPos[p+2] += sparkVel[p+2] * delta;
+
+      // head of the streak = current position; tail = a little behind, along its path
+      linePositions[l]   = sparkPos[p];
+      linePositions[l+1] = sparkPos[p+1];
+      linePositions[l+2] = sparkPos[p+2];
+      linePositions[l+3] = sparkPos[p]   - sparkVel[p]   * SPARK_TRAIL;
+      linePositions[l+4] = sparkPos[p+1] - sparkVel[p+1] * SPARK_TRAIL;
+      linePositions[l+5] = sparkPos[p+2] - sparkVel[p+2] * SPARK_TRAIL;
+
+      // colour: hot orange when new, cooling to deep red, fading to nothing
+      const t = Math.max(sparkLife[i], 0) / sparkSpan[i];  // 1 = just launched, 0 = about to die
+      lineColors[l]   = 1.0 * t + 0.25 * (1 - t) * t * 4;  // red
+      lineColors[l+1] = 0.42 * t * t;                      // green (gives the orange when hot)
+      lineColors[l+2] = 0.12 * t * t * t;                  // blue  (a touch of white-hot at the start)
+      lineColors[l+3] = 0.5 * t;                           // the tail is dimmer and pure red
+      lineColors[l+4] = 0.03 * t;
+      lineColors[l+5] = 0;
+    }
+    sparkGeometry.attributes.position.needsUpdate = true;  // tell Three.js the buffers changed
+    sparkGeometry.attributes.color.needsUpdate = true;
+  }
+
+  /* ---------- 8c. Glints: brief flashes of reflected light on random corners ----------
+     On real polished metal, a sharp corner sometimes catches a light and flashes
+     for a moment. We imitate that with a few small star-shaped pictures ("sprites")
+     that appear on a random corner, brighten, fade, then jump to another corner.   */
+  const GLINT_COUNT = 0;      // how many glints can be visible at the same time (0 = off; it started at 5)
+  const GLINT_SIZE  = 0.6;    // how big a glint is at its brightest
+  const GLINT_TIME  = 0.9;    // seconds one flash lasts
+  const GLINT_PAUSE = 1.6;    // longest wait (seconds) before a glint flashes again
+
+  // 1. Find the corners of every outline.
+  // Corners in a traced outline are slightly rounded (several points close together), so we
+  // compare the direction a short distance BEFORE each point with the direction a short
+  // distance AFTER it. A big change of direction means the outline turns a corner there.
+  function findCorners(outline) {
+    const REACH = 0.22;                         // how far to look back and ahead along the outline
+    const n = outline.length;
+    const reach = (i, step) => {                // walk from point i until REACH away from it
+      let j = i;
+      for (let k = 0; k < n; k++) {
+        j = (j + step + n) % n;
+        if (Math.hypot(outline[j][0] - outline[i][0], outline[j][1] - outline[i][1]) >= REACH) break;
+      }
+      return outline[j];
+    };
+    const candidates = [];
+    for (let i = 0; i < n; i++) {
+      const [bx, by] = outline[i];
+      const [ax, ay] = reach(i, -1);
+      const [cx, cy] = reach(i, +1);
+      let turn = Math.abs(Math.atan2(cy - by, cx - bx) - Math.atan2(by - ay, bx - ax));
+      if (turn > Math.PI) turn = Math.PI * 2 - turn;
+      if (turn > 0.8) candidates.push({ x: bx, y: by, turn });   // 0.8 rad is about 45 degrees
+    }
+    // Several neighbouring points can all belong to one corner: keep only the sharpest of each cluster.
+    candidates.sort((p, q) => q.turn - p.turn);
+    const kept = [];
+    for (const c of candidates) {
+      if (kept.every((k) => Math.hypot(k.x - c.x, k.y - c.y) > 0.3)) kept.push(c);
+    }
+    return kept;
+  }
+
+  const corners = [];         // each entry: { part: the 3D part it belongs to, x, y }
+  if (shapes) {
+    for (const data of shapes.parts) {
+      const part = logo.getObjectByName(data.name);
+      for (const outline of [data.outer, ...data.holes]) {
+        for (const c of findCorners(outline)) corners.push({ part, x: c.x, y: c.y });
+      }
+    }
+  }
+
+  // 2. Paint the glint picture: a soft bright dot with a four-pointed star through it.
+  function makeGlintTexture() {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d');
+    const dot = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    dot.addColorStop(0,    'rgba(255,255,255,1)');
+    dot.addColorStop(0.12, 'rgba(255,220,200,0.75)');
+    dot.addColorStop(0.4,  'rgba(255,80,50,0.16)');
+    dot.addColorStop(1,    'rgba(255,40,20,0)');
+    g.fillStyle = dot;
+    g.fillRect(0, 0, 128, 128);
+    for (const [w, h] of [[128, 3], [3, 128]]) {      // one horizontal and one vertical streak
+      const streak = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+      streak.addColorStop(0, 'rgba(255,255,255,0.95)');
+      streak.addColorStop(1, 'rgba(255,200,180,0)');
+      g.fillStyle = streak;
+      g.fillRect(64 - w / 2, 64 - h / 2, w, h);
+    }
+    const texture = new THREE.CanvasTexture(c);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    return texture;
+  }
+  const glintTexture = makeGlintTexture();
+
+  // 3. Create the glints. A Sprite is a flat picture that always faces the camera.
+  const glints = [];
+  for (let i = 0; i < GLINT_COUNT && corners.length > 0; i++) {
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glintTexture,
+      blending: THREE.AdditiveBlending,   // adds light on top of what is behind it
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      depthTest: false                    // always drawn on top, never cut off by the model
+    }));
+    sprite.renderOrder = 10;
+    // "wait" is staggered so they do not all flash together at the start.
+    glints.push({ sprite, age: 0, wait: 0.3 + i * 0.45, active: false });
+  }
+
+  function updateGlints(delta) {
+    for (const glint of glints) {
+      if (!glint.active) {
+        glint.wait -= delta;
+        if (glint.wait > 0) continue;
+        // Time to flash: jump to a random corner. Attaching the sprite to that corner's
+        // part means a glint on the cogwheel travels round with the cogwheel.
+        const corner = corners[Math.floor(Math.random() * corners.length)];
+        corner.part.add(glint.sprite);
+        glint.sprite.position.set(corner.x, corner.y, DEPTH / 2 + 0.03);
+        glint.sprite.material.rotation = Math.random() * 0.6 - 0.3;   // slight random twist
+        glint.age = 0;
+        glint.active = true;
+      }
+      glint.age += delta;
+      const t = glint.age / GLINT_TIME;                 // 0 = start of the flash, 1 = end
+      if (t >= 1) {                                     // finished: hide and wait a random time
+        glint.active = false;
+        glint.sprite.material.opacity = 0;
+        glint.wait = 0.2 + Math.random() * GLINT_PAUSE;
+        continue;
+      }
+      const brightness = Math.sin(t * Math.PI);         // rises from 0 to 1 and back to 0
+      glint.sprite.material.opacity = brightness * 0.9;
+      const size = GLINT_SIZE * (0.35 + 0.65 * brightness);
+      glint.sprite.scale.set(size, size, 1);
+    }
+  }
+
+  /* ---------- 9. The animation loop: runs about 60 times per second ---------- */
+  const clock = new THREE.Clock();
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const delta   = Math.min(clock.getDelta(), 0.1); // seconds since the last frame
+    const elapsed = clock.elapsedTime;
+
+    if (gear) {
+      overGear = isPointerOnGear();
+      canvas.style.cursor = overGear ? 'pointer' : '';
+
+      // Ease the hover boost toward its target (2.2× while hovering, 1× otherwise).
+      hoverBoost += ((overGear ? 2.2 : 1) - hoverBoost) * Math.min(1, delta * 4);
+
+      // ROTATE THE COGWHEEL. The gear's flat face points along Z, so it spins around Z.
+      // Multiplying by delta makes the speed identical on fast and slow computers.
+      // Only spin while the cursor is moving. "Moving" = it moved within the last STOP_DELAY ms.
+      // spin eases toward 1 (moving) or 0 (still) so the wheel speeds up and slows down smoothly.
+      const cursorMoving = performance.now() - lastMoveTime < STOP_DELAY;
+      spin += ((cursorMoving ? 1 : 0) - spin) * Math.min(1, delta * 6);
+      if (spin < 0.001) spin = 0;       // come to a complete stop instead of creeping forever
+
+      gear.rotation.z -= BASE_SPEED * speedMultiplier * hoverBoost * direction * spin * delta;
+    }
+
+    updateGlints(delta);             // flashes of light on random corners
+    updateSparks(delta, spin);       // throw sparks in proportion to how fast the cogwheel turns
+
+    // A gentle floating motion for the whole logo so it feels alive.
+    logo.position.y = Math.sin(elapsed * 0.9) * 0.08;
+    // The whole logo is turned as one piece (TILT_Y / TILT_X), plus a tiny sway on top.
+    logo.rotation.y = TILT_Y + Math.sin(elapsed * 0.5) * 0.03;
+    logo.rotation.x = TILT_X + Math.sin(elapsed * 0.7) * 0.015;
+
+    renderer.render(scene, camera);  // draw this frame
+  }
+  animate();
+  </script>
+</body>
+</html>
