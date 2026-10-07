@@ -9,10 +9,16 @@ defined('ABSPATH') || exit;
 add_action('wp_head', static function () {
     if (is_front_page() && is_readable(ABSPATH . 'rex-3d/rex-logo-hero/index.html')) {
         echo '<style id="rex-home-3d-hero-style">#page-header{display:none}'
-            . 'body.home .menu-wrapper #masthead,'
-            . 'body.home .menu-wrapper #masthead .menu-container{background-color:#fff!important}'
-            . 'body.home .menu-wrapper #masthead .menu-horizontal-inner>.nav>.menu-smart>li>a:hover,'
-            . 'body.home .menu-wrapper #masthead .menu-horizontal-inner>.nav>.menu-smart>li>a:focus{color:#303133!important}'
+            . 'body.home .menu-wrapper #masthead.menu-transparent:not(.is_stuck),'
+            . 'body.home .menu-wrapper #masthead.menu-transparent:not(.is_stuck) .menu-container{background-color:transparent!important}'
+            . 'body.home .menu-wrapper #masthead.menu-transparent:not(.is_stuck) .menu-horizontal-inner>.nav>.menu-smart>li>a,'
+            . 'body.home .menu-wrapper #masthead.menu-transparent:not(.is_stuck) .menu-horizontal-inner>.nav>.menu-smart>li>a:hover,'
+            . 'body.home .menu-wrapper #masthead.menu-transparent:not(.is_stuck) .menu-horizontal-inner>.nav>.menu-smart>li>a:focus,'
+            . 'body.home .menu-wrapper #masthead.menu-transparent:not(.is_stuck) .navbar-brand,'
+            . 'body.home .menu-wrapper #masthead.menu-transparent:not(.is_stuck) .social-menu-link{color:#f3e9e7!important;opacity:1!important}'
+            . 'body.home .menu-wrapper #masthead.menu-transparent:not(.is_stuck) .logo-skinnable svg,'
+            . 'body.home .menu-wrapper #masthead.menu-transparent:not(.is_stuck) .logo-canvas,'
+            . 'body.home .menu-wrapper #masthead.menu-transparent:not(.is_stuck) .mobile-menu-button{filter:brightness(0) invert(1)}'
             . '</style>';
     }
 });
