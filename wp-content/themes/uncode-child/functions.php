@@ -68,12 +68,27 @@ add_action('wp_footer', static function () {
     }
     var items = row.querySelectorAll('.uncode-single-media, .vc_custom_heading_wrap, .divider-wrapper, .btn-container');
     items.forEach(function (el, i) { el.style.transitionDelay = (i * 0.12) + 's'; });
-    var observer = new IntersectionObserver(function (entries) {
-        if (!entries[0].isIntersecting) return;
-        items.forEach(function (el) { el.classList.add('rex-in'); });
-        observer.disconnect();
-    }, { threshold: 0.15 });
-    observer.observe(row);
+    var reveal = function () {
+        reveal = function () {};
+        var observer = new IntersectionObserver(function (entries) {
+            if (!entries[0].isIntersecting) return;
+            items.forEach(function (el) { el.classList.add('rex-in'); });
+            observer.disconnect();
+        }, { threshold: 0.15 });
+        observer.observe(row);
+    };
+
+    // Start only once the image has fully loaded and decoded, so it fades in complete.
+    var img = row.querySelector('.uncode-single-media img');
+    if (!img || (img.complete && img.naturalWidth)) {
+        reveal();
+    } else {
+        img.addEventListener('load', function () {
+            (img.decode ? img.decode() : Promise.resolve()).catch(function () {}).then(function () { reveal(); });
+        }, { once: true });
+        img.addEventListener('error', function () { reveal(); }, { once: true });
+        setTimeout(function () { reveal(); }, 4000);
+    }
 })();
 </script>
     <?php
