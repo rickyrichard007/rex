@@ -37,3 +37,44 @@ add_filter('uncode_single_content_final_output', static function ($content) {
 
     return $hero . $content;
 });
+
+// Fade in the About page intro section (image, headings, divider, text, button) on scroll.
+add_action('wp_head', static function () {
+    if (!is_page('about-us')) {
+        return;
+    }
+
+    $items = '#row-unique-1 :is(.uncode-single-media,.vc_custom_heading_wrap,.divider-wrapper,.btn-container)';
+    echo '<style id="rex-about-fade-style">'
+        . 'html.rex-about-fade ' . $items . '{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease}'
+        . 'html.rex-about-fade #row-unique-1 .btn-container{display:inline-block}'
+        . 'html.rex-about-fade ' . $items . '.rex-in{opacity:1;transform:none}'
+        . '@media (prefers-reduced-motion:reduce){html.rex-about-fade ' . $items . '{opacity:1;transform:none;transition:none}}'
+        . '</style>'
+        . '<script>if("IntersectionObserver"in window)document.documentElement.classList.add("rex-about-fade");</script>';
+});
+
+add_action('wp_footer', static function () {
+    if (!is_page('about-us')) {
+        return;
+    }
+    ?>
+<script id="rex-about-fade-script">
+(function () {
+    var row = document.getElementById('row-unique-1');
+    if (!row || !document.documentElement.classList.contains('rex-about-fade')) {
+        document.documentElement.classList.remove('rex-about-fade');
+        return;
+    }
+    var items = row.querySelectorAll('.uncode-single-media, .vc_custom_heading_wrap, .divider-wrapper, .btn-container');
+    items.forEach(function (el, i) { el.style.transitionDelay = (i * 0.12) + 's'; });
+    var observer = new IntersectionObserver(function (entries) {
+        if (!entries[0].isIntersecting) return;
+        items.forEach(function (el) { el.classList.add('rex-in'); });
+        observer.disconnect();
+    }, { threshold: 0.15 });
+    observer.observe(row);
+})();
+</script>
+    <?php
+});
