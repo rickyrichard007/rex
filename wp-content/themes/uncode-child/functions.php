@@ -78,17 +78,24 @@ add_action('wp_footer', static function () {
         observer.observe(row);
     };
 
-    // Start only once the image has fully loaded and decoded, so it fades in complete.
+    // Uncode swaps the image srcset on window load, so wait for that and for the
+    // final image source to load and decode before fading anything in.
     var img = row.querySelector('.uncode-single-media img');
-    if (!img || (img.complete && img.naturalWidth)) {
-        reveal();
-    } else {
-        img.addEventListener('load', function () {
-            (img.decode ? img.decode() : Promise.resolve()).catch(function () {}).then(function () { reveal(); });
-        }, { once: true });
+    var whenImageReady = function () {
+        if (!img || (img.complete && img.naturalWidth && !img.classList.contains('srcset-fetching'))) {
+            (img && img.decode ? img.decode() : Promise.resolve()).catch(function () {}).then(function () { reveal(); });
+            return;
+        }
+        img.addEventListener('load', whenImageReady, { once: true });
         img.addEventListener('error', function () { reveal(); }, { once: true });
-        setTimeout(function () { reveal(); }, 4000);
+    };
+    var start = function () { setTimeout(whenImageReady, 100); };
+    if (document.readyState === 'complete') {
+        start();
+    } else {
+        window.addEventListener('load', start, { once: true });
     }
+    setTimeout(function () { reveal(); }, 6000);
 })();
 </script>
     <?php
