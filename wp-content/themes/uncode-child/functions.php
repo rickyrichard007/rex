@@ -100,3 +100,64 @@ add_action('wp_footer', static function () {
 </script>
     <?php
 });
+
+// Post cards on the About page: show the full excerpt and replace the date with a custom field.
+add_action('add_meta_boxes_post', static function () {
+    add_meta_box('rex-card-top-text', 'Card Top Text', static function ($post) {
+        wp_nonce_field('rex_card_top_text', 'rex_card_top_text_nonce');
+        echo '<label class="screen-reader-text" for="rex_card_top_text">Card Top Text</label>'
+            . '<input type="text" class="widefat" id="rex_card_top_text" name="rex_card_top_text" value="'
+            . esc_attr(get_post_meta($post->ID, 'rex_card_top_text', true)) . '" />'
+            . '<p class="description">Shown above the title on About page post cards, in place of the date. Leave empty to show nothing.</p>';
+    }, 'post', 'side');
+});
+
+add_action('save_post_post', static function ($post_id) {
+    if (!isset($_POST['rex_card_top_text_nonce'])
+        || !wp_verify_nonce(sanitize_key($_POST['rex_card_top_text_nonce']), 'rex_card_top_text')
+        || (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE)
+        || !current_user_can('edit_post', $post_id)) {
+        return;
+    }
+
+    $value = isset($_POST['rex_card_top_text']) ? sanitize_text_field(wp_unslash($_POST['rex_card_top_text'])) : '';
+    if ($value === '') {
+        delete_post_meta($post_id, 'rex_card_top_text');
+    } else {
+        update_post_meta($post_id, 'rex_card_top_text', $value);
+    }
+});
+
+// Swap in the field / lift the excerpt limit only while Uncode renders posts modules on the About page.
+$rex_card_overrides = static function () {
+    static $filters = null;
+    $filters = $filters ?: array(
+        'length' => static function () {
+            return PHP_INT_MAX;
+        },
+        'date' => static function ($date, $format, $post) {
+            return esc_html(get_post_meta(get_post($post)->ID, 'rex_card_top_text', true));
+        },
+    );
+    return $filters;
+};
+
+add_filter('pre_do_shortcode_tag', static function ($output, $tag) use ($rex_card_overrides) {
+    if ($tag === 'uncode_index' && is_page('about-us')) {
+        $filters = $rex_card_overrides();
+        add_filter('uncode_block_data_text_length', $filters['length']);
+        add_filter('get_the_date', $filters['date'], 10, 3);
+    }
+    return $output;
+}, 10, 2);
+
+add_filter('do_shortcode_tag', static function ($output, $tag) use ($rex_card_overrides) {
+    if ($tag === 'uncode_index' && is_page('about-us')) {
+        $filters = $rex_card_overrides();
+        remove_filter('uncode_block_data_text_length', $filters['length']);
+        remove_filter('get_the_date', $filters['date'], 10);
+        // Drop the empty meta line left by posts without Card Top Text.
+        $output = preg_replace('#<p class="t-entry-meta">\s*<span class="t-entry-date"></span>\s*</p>#', '', $output);
+    }
+    return $output;
+}, 10, 2);
