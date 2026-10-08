@@ -1,0 +1,35 @@
+/* Viewer geometry only. Text, buttons, skins and spacing come from Uncode. */
+#rex-3d-page { --rex-accent: currentColor; position: relative; isolation: isolate; clip-path: inset(0); }
+#rex-3d-page #stage, #rex-3d-page #hot { position: fixed; inset: 0; pointer-events: none; }
+#rex-3d-page #stage { z-index: 0; }
+#rex-3d-page #gl { width: 100%; height: 100%; display: block; pointer-events: auto; touch-action: pan-y; cursor: grab; transition: opacity .4s; }
+#rex-3d-page #gl.drag { cursor: grabbing; }
+#rex-3d-page #stage.dim #gl { opacity: .25; }
+#rex-3d-page [data-cam] { position: relative; z-index: 2; pointer-events: none; }
+#rex-3d-page .rex-3d-copy .uncol { pointer-events: auto; }
+#rex-3d-page .rex-3d-scene > .row { min-height: 100vh; }
+#rex-3d-page #hot { z-index: 1; }
+#rex-3d-page .hs { position: absolute; opacity: 0; transition: opacity .3s; white-space: nowrap; }
+#rex-3d-page.show-hs .hs { opacity: 1; }
+#rex-3d-page .hs i { position: absolute; width: 12px; height: 12px; margin: -6px; border-radius: 50%; background: var(--rex-accent); }
+#rex-3d-page .hs span { position: absolute; left: 18px; top: -12px; padding: .25em .6em; background: var(--rex-surface, Canvas); color: inherit; border: 1px solid var(--rex-accent); border-radius: 4px; font: inherit; }
+#rex-3d-page [data-rex-part] { cursor: pointer; }
+#rex-3d-page [data-rex-part].on { outline: 2px solid var(--rex-accent); outline-offset: 6px; }
+#rex-3d-page #rail { position: fixed; right: 18px; top: 50%; transform: translateY(-50%); z-index: 3; display: grid; gap: 12px; }
+#rex-3d-page #rail a { display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+#rex-3d-page #rail a i { width: 8px; height: 8px; border: 1px solid currentColor; border-radius: 50%; }
+#rex-3d-page #rail a.on i { background: var(--rex-accent); border-color: var(--rex-accent); }
+#rex-3d-page .drag-tip { position: fixed; right: 28px; bottom: 24px; z-index: 1; pointer-events: none; }
+#rex-3d-page #loader { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; background: var(--rex-surface, Canvas); color: inherit; }
+#rex-3d-page #loader.done { display: none; }
+#rex-3d-page #loader div { font: inherit; }
+#rex-3d-page .rex-3d-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
+#rex-3d-page .rex-3d-readout strong { display: block; }
+#rex-3d-page .led { display: inline-block; width: 8px; height: 8px; border: 1px solid currentColor; border-radius: 50%; margin-right: 6px; }
+#rex-3d-page .led.on { background: var(--rex-accent); }
+@media (max-width: 959px) {
+    #rex-3d-page #rail, #rex-3d-page .drag-tip, #rex-3d-page .rex-3d-placeholder { display: none; }
+    #rex-3d-page .rex-3d-scene > .row { min-height: 115vh; padding-top: 55vh; display: flex; align-items: flex-end; }
+    #rex-3d-page .rex-3d-copy .uncol { background: var(--rex-surface, Canvas); border-radius: 8px; padding: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { #rex-3d-page #gl, #rex-3d-page .hs { transition: none; } }
