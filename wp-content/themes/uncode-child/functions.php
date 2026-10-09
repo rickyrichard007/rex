@@ -158,6 +158,21 @@ add_filter('do_shortcode_tag', static function ($output, $tag) use ($rex_card_ov
         remove_filter('get_the_date', $filters['date'], 10);
         // Drop the empty meta line left by posts without Card Top Text.
         $output = preg_replace('#<p class="t-entry-meta">\s*<span class="t-entry-date"></span>\s*</p>#', '', $output);
+        $output = str_replace('<p class="t-entry-meta"><span class="t-entry-date">', '<p class="t-entry-meta rex-card-top-text"><span class="t-entry-date">', $output);
     }
     return $output;
 }, 10, 2);
+
+// Card Top Text is set larger than the post title (35px).
+add_action('wp_head', static function () {
+    if (!is_page('about-us')) {
+        return;
+    }
+    echo '<style id="rex-card-top-text-style">'
+        . '.tmb .t-entry p.t-entry-meta.rex-card-top-text{margin-bottom:.4em}'
+        // Journal section (desktop row 2, mobile row 3): Instrument Sans instead of the builder's EB Garamond.
+        . '#row-unique-2 .font-165032,#row-unique-3 .font-165032{font-family:"Instrument Sans",sans-serif!important}'
+        . '.tmb .t-entry p.t-entry-meta.rex-card-top-text span.t-entry-date{font-family:"Instrument Sans",sans-serif;font-size:46px;line-height:1.1;font-weight:600;text-transform:none;letter-spacing:0}'
+        . '@media (max-width:569px){.tmb .t-entry p.t-entry-meta.rex-card-top-text span.t-entry-date{font-size:40px}}'
+        . '</style>';
+});
