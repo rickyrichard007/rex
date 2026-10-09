@@ -159,6 +159,28 @@ add_filter('do_shortcode_tag', static function ($output, $tag) use ($rex_card_ov
         // Drop the empty meta line left by posts without Card Top Text.
         $output = preg_replace('#<p class="t-entry-meta">\s*<span class="t-entry-date"></span>\s*</p>#', '', $output);
         $output = str_replace('<p class="t-entry-meta"><span class="t-entry-date">', '<p class="t-entry-meta rex-card-top-text"><span class="t-entry-date">', $output);
+        // Uncode crops every thumbnail to the 4:5 card frame; for images of another shape use the
+        // original file and size the frame to the image's own ratio, so it shows whole and fills it.
+        $output = preg_replace_callback(
+            '#<div class="dummy" style="padding-top: [\d.]+%;"></div>(\s*<a\b(?:(?!<img\b).)*?)(<img\b[^>]*\bsrcset-async\b[^>]*>)#s',
+            static function ($m) {
+                $img = $m[2];
+                if (!preg_match('#data-width="(\d+)"#', $img, $w) || !preg_match('#data-height="(\d+)"#', $img, $h)
+                    || !preg_match('#data-guid="([^"]+)"#', $img, $src) || !(int) $w[1] || !(int) $h[1]
+                    || abs(((int) $w[1] / (int) $h[1]) - 0.8) < 0.05) {
+                    return $m[0];
+                }
+                $img = preg_replace('#(?<=\s)src="[^"]*"#', 'src="' . $src[1] . '"', $img);
+                $img = preg_replace('#(?<=\s)width="\d+"#', 'width="' . $w[1] . '"', $img);
+                $img = preg_replace('#(?<=\s)height="\d+"#', 'height="' . $h[1] . '"', $img);
+                // Drop Uncode's lazy-load placeholder; its script only swaps it on .srcset-async images.
+                $img = preg_replace('#\s(?:data-srcset|srcset|sizes)="[^"]*"#', '', $img);
+                $img = str_replace(array('srcset-async srcset-auto', 'srcset-async'), 'rex-fit-contain', $img);
+                $ratio = round((int) $h[1] / (int) $w[1] * 100, 4);
+                return '<div class="dummy" style="padding-top: ' . $ratio . '%;"></div>' . $m[1] . $img;
+            },
+            $output
+        );
     }
     return $output;
 }, 10, 2);
@@ -172,7 +194,20 @@ add_action('wp_head', static function () {
         . '.tmb .t-entry p.t-entry-meta.rex-card-top-text{margin-bottom:.4em}'
         // Journal section (desktop row 2, mobile row 3): Instrument Sans instead of the builder's EB Garamond.
         . '#row-unique-2 .font-165032,#row-unique-3 .font-165032{font-family:"Instrument Sans",sans-serif!important}'
-        . '.tmb .t-entry p.t-entry-meta.rex-card-top-text span.t-entry-date{font-family:"Instrument Sans",sans-serif;font-size:46px;line-height:1.1;font-weight:600;text-transform:none;letter-spacing:0}'
+        . '.tmb .t-entry p.t-entry-meta.rex-card-top-text span.t-entry-date{font-family:"Instrument Sans",sans-serif;font-size:46px;line-height:1;font-weight:600;text-transform:none;letter-spacing:0}'
         . '@media (max-width:569px){.tmb .t-entry p.t-entry-meta.rex-card-top-text span.t-entry-date{font-size:40px}}'
+        . '.tmb .t-entry-visual img.rex-fit-contain{object-fit:contain;object-position:center}'
+        // Journal cards side by side: wider text column; every image cropped to one frame ratio (foundry.jpg, 394x261).
+        . '@media (min-width:570px){'
+        . ':is(#row-unique-2,#row-unique-3) .tmb-content-lateral.tmb>.t-inside{display:flex!important;align-items:flex-start!important}'
+        . ':is(#row-unique-2,#row-unique-3) .tmb-content-lateral.tmb>.t-inside>.t-entry-visual{--rex-img-scale:1.2;width:calc(45% * var(--rex-img-scale))!important;flex:0 0 auto}'
+        . ':is(#row-unique-2,#row-unique-3) .tmb-content-lateral.tmb>.t-inside .t-entry-text{width:55%!important;flex:0 0 auto}'
+        . ':is(#row-unique-2,#row-unique-3) .tmb .t-entry-text-tc{padding-left:48px!important}'
+        . ':is(#row-unique-2,#row-unique-3) .tmb .t-entry-visual .dummy{padding-top:66.24%!important}'
+        . ':is(#row-unique-2,#row-unique-3) .tmb .t-entry-visual img{object-fit:cover!important;object-position:center}'
+        . '}'
+        // Align card text with the image top: drop the builder's leading spacer while image and text are side by side.
+        . '@media (min-width:570px){#row-unique-2 .tmb .t-entry>.spacer:first-child,#row-unique-3 .tmb .t-entry>.spacer:first-child{display:none}'
+        . '#row-unique-2 .tmb .t-entry>.spacer:first-child+*,#row-unique-3 .tmb .t-entry>.spacer:first-child+*{margin-top:0!important}}'
         . '</style>';
 });
