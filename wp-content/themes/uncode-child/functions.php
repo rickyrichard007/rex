@@ -97,6 +97,23 @@ add_action('wp_footer', static function () {
     }
     setTimeout(function () { reveal(); }, 6000);
 })();
+
+// "My Biography" button: scroll to the Journal section (row 2 on desktop, row 3 on tablet/mobile).
+(function () {
+    var btn = document.querySelector('#row-unique-1 .btn-container a.btn');
+    if (!btn) return;
+    btn.addEventListener('click', function (e) {
+        var target = [document.getElementById('row-unique-2'), document.getElementById('row-unique-3')]
+            .filter(function (el) { return el && el.offsetParent !== null; })[0];
+        if (!target) return;
+        e.preventDefault();
+        var header = document.getElementById('masthead');
+        var offset = header ? header.getBoundingClientRect().height : 0;
+        var top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({ top: top, behavior: reduce ? 'auto' : 'smooth' });
+    });
+})();
 </script>
     <?php
 });
