@@ -168,7 +168,7 @@ add_filter('pre_do_shortcode_tag', static function ($output, $tag) use ($rex_car
     return $output;
 }, 10, 2);
 
-add_filter('do_shortcode_tag', static function ($output, $tag) use ($rex_card_overrides) {
+add_filter('do_shortcode_tag', static function ($output, $tag, $attr) use ($rex_card_overrides) {
     if ($tag === 'uncode_index' && is_page('about-us')) {
         $filters = $rex_card_overrides();
         remove_filter('uncode_block_data_text_length', $filters['length']);
@@ -198,9 +198,23 @@ add_filter('do_shortcode_tag', static function ($output, $tag) use ($rex_card_ov
             },
             $output
         );
+
+        // The Journal carousel is informational: its image and title must not open posts.
+        if (($attr['el_id'] ?? '') === 'index-950589'
+            && in_array($attr['index_type'] ?? '', array('sticky-scroll', 'css_grid'), true)) {
+            $remove_card_link = static function ($match) {
+                return preg_replace('#\s(?:href|target|role|tabindex)="[^"]*"#i', '', $match[0]);
+            };
+            $output = preg_replace_callback('#<a\b(?=[^>]*\bclass="[^"]*\bpushed\b)[^>]*>#i', $remove_card_link, $output);
+            $output = preg_replace_callback(
+                '#<h[1-6]\b[^>]*\bclass="[^"]*\bt-entry-title\b[^"]*"[^>]*>\s*\K<a\b[^>]*>#i',
+                $remove_card_link,
+                $output
+            );
+        }
     }
     return $output;
-}, 10, 2);
+}, 10, 3);
 
 // Card Top Text is set larger than the post title (35px).
 add_action('wp_head', static function () {
@@ -211,6 +225,9 @@ add_action('wp_head', static function () {
         . '.tmb .t-entry p.t-entry-meta.rex-card-top-text{margin-bottom:.4em}'
         // Journal section (desktop row 2, mobile row 3): Instrument Sans instead of the builder's EB Garamond.
         . '#row-unique-2 .font-165032,#row-unique-3 .font-165032{font-family:"Instrument Sans",sans-serif!important}'
+        . ':is(#row-unique-2,#row-unique-3) .tmb .t-entry-title a,'
+        . ':is(#row-unique-2,#row-unique-3) .tmb .t-entry-title a:hover{color:#fff!important;cursor:default}'
+        . ':is(#row-unique-2,#row-unique-3) .tmb .t-entry-visual-cont a.pushed{cursor:default}'
         . '.tmb .t-entry p.t-entry-meta.rex-card-top-text span.t-entry-date{font-family:"Instrument Sans",sans-serif;font-size:46px;line-height:1;font-weight:600;text-transform:none;letter-spacing:0}'
         . '@media (max-width:569px){.tmb .t-entry p.t-entry-meta.rex-card-top-text span.t-entry-date{font-size:40px}}'
         . '.tmb .t-entry-visual img.rex-fit-contain{object-fit:contain;object-position:center}'
