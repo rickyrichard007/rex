@@ -77,6 +77,7 @@ add_action('wp_head', static function () {
 
     $items = '#row-unique-1 :is(.uncode-single-media,.vc_custom_heading_wrap,.divider-wrapper,.btn-container)';
     echo '<style id="rex-about-fade-style">'
+        . '#row-unique-1 .uncode-single-media-wrapper{border-radius:20px;overflow:hidden}'
         . 'html.rex-about-fade ' . $items . '{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s ease}'
         . 'html.rex-about-fade #row-unique-1 .btn-container{display:inline-block}'
         . 'html.rex-about-fade ' . $items . '.rex-in{opacity:1;transform:none}'
