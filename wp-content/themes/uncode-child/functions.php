@@ -44,7 +44,7 @@ add_filter('uncode_get_single_content_raw', static function ($content) {
         return $content;
     }
 
-    return preg_replace_callback(
+    $content = preg_replace_callback(
         '#\[vc_row\b[^\]]*\buncode_shortcode_id="162845"[^\]]*\]#',
         static function ($row) {
             return preg_replace('#\bel_class="([^"]*)"#', 'el_class="$1 rex-founder-portrait-left"', $row[0], 1);
@@ -52,6 +52,30 @@ add_filter('uncode_get_single_content_raw', static function ($content) {
         $content,
         1
     );
+
+    // Use Uncode's animated Counter in place of this card's 92% Pie Chart.
+    return preg_replace(
+        '#\[vc_pie\b(?=[^\]]*\buncode_shortcode_id="449705")[^\]]*\]#',
+        '[uncode_counter value="1977" prefix="Since" font="font-161747" size="h1" weight="500" el_class="rex-since-1977" uncode_shortcode_id="449705"]',
+        $content,
+        1
+    );
+});
+
+// A Git-deployed page can still have the Pie Chart in its database; load Counter assets there too.
+add_filter('uncode_enqueue_jquery_counterup', static function ($enqueue) {
+    return $enqueue || is_page('about-us');
+});
+
+add_action('wp_head', static function () {
+    if (is_page('about-us')) {
+        echo '<style id="rex-since-counter-style">'
+            . '.rex-since-1977{margin-bottom:36px}'
+            . '.rex-since-1977>p{font-size:clamp(50px,6vw,72px)!important;line-height:1.05;margin:0!important}'
+            . '.rex-since-1977 .counter-prefix{display:block;color:#74faba;font-size:15px;line-height:1.2;letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px}'
+            . '.rex-since-1977 .uncode-counter{color:#fff}'
+            . '</style>';
+    }
 });
 
 add_action('wp_head', static function () {
@@ -59,9 +83,9 @@ add_action('wp_head', static function () {
         $portrait = wp_get_attachment_image_url(179943, 'full');
         echo '<style id="rex-founder-layout">@media (min-width:960px){'
             . '.rex-founder-portrait-left{position:relative}'
-            . '.rex-founder-portrait-left>.row-parent{width:100%;max-width:none;padding-top:100px!important;padding-bottom:100px!important}'
+            . '.rex-founder-portrait-left>.row-parent{display:block!important;width:100%;max-width:none;padding-top:100px!important;padding-bottom:100px!important}'
             . '.rex-founder-portrait-left>.row-parent>.row-inner{display:flex;flex-direction:row-reverse}'
-            . '.rex-founder-portrait-left>.row-parent>.row-inner>.wpb_column{flex:0 0 50%;max-width:50%}'
+            . '.rex-founder-portrait-left>.row-parent>.row-inner>.wpb_column{flex:0 0 50%;max-width:50%;height:auto!important}'
             . ($portrait ? '.rex-founder-portrait-left>.row-parent>.row-inner>.wpb_column:nth-child(2)>.uncol{display:none}'
                 . '.rex-founder-portrait-left:after{content:"";position:absolute;inset:-100px 50% 0 0;background:url("' . esc_url($portrait) . '") center bottom/contain no-repeat;pointer-events:none;z-index:1}' : '')
             . '.rex-founder-portrait-left>.row-parent>.row-inner>.wpb_column:first-child>.uncol>.uncoltable>.uncell>.uncont{max-width:80%!important}'
