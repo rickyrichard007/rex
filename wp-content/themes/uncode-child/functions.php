@@ -61,12 +61,46 @@ add_filter('uncode_get_single_content_raw', static function ($content) {
         1
     );
 
-    return preg_replace('#\[vc_button\b(?=[^\]]*\buncode_shortcode_id="679721")[^\]]*\].*?\[/vc_button\]#s', '', $content, 1);
+    $content = preg_replace('#\[vc_button\b(?=[^\]]*\buncode_shortcode_id="679721")[^\]]*\].*?\[/vc_button\]#s', '', $content, 1);
+
+    return preg_replace('#\[vc_gallery\b(?=[^\]]*\buncode_shortcode_id="205795")[^\]]*\]#', '[rex_about_values]', $content, 1);
+});
+
+add_shortcode('rex_about_values', static function () {
+    $values = array(
+        'Teamwork' => '<circle cx="8" cy="8" r="2.5"/><circle cx="16" cy="8" r="2.5"/><path d="M2.5 19v-1a5.5 5.5 0 0 1 11 0v1M13 13a5.5 5.5 0 0 1 8.5 5v1"/>',
+        'Innovation' => '<path d="M9 18h6M10 21h4M8.5 14.5a6 6 0 1 1 7 0c-.9.7-1.5 1.5-1.5 2.5h-4c0-1-.6-1.8-1.5-2.5Z"/>',
+        'Compliance' => '<path d="M12 2 20 5v6c0 5-3.2 8.5-8 11-4.8-2.5-8-6-8-11V5l8-3Z"/><path d="m8.5 12 2.5 2.5 4.5-5"/>',
+        'Integrity' => '<path d="M12 3v18M5 21h14M4 7h16M7 7l-3 6h6l-3-6Zm10 0-3 6h6l-3-6Z"/>',
+        'Accountability' => '<rect x="5" y="4" width="14" height="18" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/>',
+        'Reliability' => '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    );
+
+    $output = '<ul class="rex-about-values" aria-label="Our values">';
+    foreach ($values as $label => $icon) {
+        $output .= '<li><span class="rex-about-value-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' . $icon . '</svg></span><span>' . esc_html($label) . '</span></li>';
+    }
+    return $output . '</ul>';
 });
 
 // A Git-deployed page can still have the Pie Chart in its database; load Counter assets there too.
 add_filter('uncode_enqueue_jquery_counterup', static function ($enqueue) {
     return $enqueue || is_page('about-us');
+});
+
+add_action('wp_head', static function () {
+    if (!is_page('about-us')) {
+        return;
+    }
+
+    echo '<style id="rex-about-values-style">'
+        . '.rex-about-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;margin:0!important;padding:0!important;list-style:none!important}'
+        . '.rex-about-values li{display:flex;align-items:center;gap:8px;min-width:0;min-height:48px;padding:6px;border:1px solid rgba(255,255,255,.17);border-radius:12px;background:rgba(255,255,255,.07);color:#fff;box-sizing:border-box}'
+        . '.rex-about-value-icon{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:rgba(167,242,216,.14);color:#a7f2d8}'
+        . '.rex-about-value-icon svg{width:17px;height:17px}'
+        . '.rex-about-values li>span:last-child{font-size:12px;font-weight:600;line-height:1.2;overflow-wrap:anywhere}'
+        . '@media(max-width:600px){.rex-about-values{grid-template-columns:repeat(2,minmax(0,1fr))}}'
+        . '</style>';
 });
 
 add_action('wp_head', static function () {
