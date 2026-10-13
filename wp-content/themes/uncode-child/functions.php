@@ -63,7 +63,19 @@ add_filter('uncode_get_single_content_raw', static function ($content) {
 
     $content = preg_replace('#\[vc_button\b(?=[^\]]*\buncode_shortcode_id="679721")[^\]]*\].*?\[/vc_button\]#s', '', $content, 1);
 
-    return preg_replace('#\[vc_gallery\b(?=[^\]]*\buncode_shortcode_id="205795")[^\]]*\]#', '[rex_about_values]', $content, 1);
+    $content = preg_replace('#\[vc_gallery\b(?=[^\]]*\buncode_shortcode_id="205795")[^\]]*\]#', '[rex_about_values]', $content, 1);
+
+    // The newer About page uses an Our Values card instead of the old gallery.
+    if (strpos($content, '[rex_about_values]') === false) {
+        $content = preg_replace(
+            '#(\[vc_custom_heading\b(?=[^\]]*\buncode_shortcode_id="115018")[^\]]*\].*?\[/vc_custom_heading\])#s',
+            '$1[rex_about_values]',
+            $content,
+            1
+        );
+    }
+
+    return $content;
 });
 
 add_shortcode('rex_about_values', static function () {
@@ -95,11 +107,15 @@ add_action('wp_head', static function () {
 
     echo '<style id="rex-about-values-style">'
         . '.rex-about-values{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;margin:0!important;padding:0!important;list-style:none!important}'
-        . '.rex-about-values li{display:flex;align-items:center;gap:8px;min-width:0;min-height:48px;padding:6px;border:1px solid rgba(255,255,255,.17);border-radius:12px;background:rgba(255,255,255,.07);color:#fff;box-sizing:border-box}'
-        . '.rex-about-value-icon{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:50%;background:rgba(167,242,216,.14);color:#a7f2d8}'
+        . '.rex-about-values li{display:flex;align-items:center;gap:6px;min-width:0;min-height:48px;padding:5px;border:1px solid rgba(255,255,255,.17);border-radius:12px;background:rgba(255,255,255,.07);color:#fff;box-sizing:border-box}'
+        . '.rex-about-value-icon{display:grid;place-items:center;flex:0 0 26px;width:26px;height:26px;border-radius:50%;background:rgba(167,242,216,.14);color:#a7f2d8}'
         . '.rex-about-value-icon svg{width:17px;height:17px}'
-        . '.rex-about-values li>span:last-child{font-size:12px;font-weight:600;line-height:1.2;overflow-wrap:anywhere}'
-        . '@media(max-width:600px){.rex-about-values{grid-template-columns:repeat(2,minmax(0,1fr))}}'
+        . '.rex-about-values li>span:last-child{font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap}'
+        . '.style-color-117547-bg .rex-about-values{margin-top:20px!important}'
+        . '.style-color-117547-bg .rex-about-value-icon{background:rgba(255,255,255,.18);color:#fff}'
+        . '@media(max-width:1700px){.rex-about-values{grid-template-columns:repeat(2,minmax(0,1fr))}}'
+        . '@media(max-width:600px){.rex-about-values li{flex-direction:column;justify-content:center;gap:5px;min-height:66px;text-align:center}}'
+        . '@media(max-width:380px){.rex-about-values{grid-template-columns:1fr}.rex-about-values li{flex-direction:row;min-height:42px;text-align:left}}'
         . '</style>';
 });
 
