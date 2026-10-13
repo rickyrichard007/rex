@@ -54,12 +54,14 @@ add_filter('uncode_get_single_content_raw', static function ($content) {
     );
 
     // Use Uncode's animated Counter in place of this card's 92% Pie Chart.
-    return preg_replace(
+    $content = preg_replace(
         '#\[vc_pie\b(?=[^\]]*\buncode_shortcode_id="449705")[^\]]*\]#',
         '[uncode_counter value="1977" prefix="Since" font="font-161747" size="h1" weight="500" el_class="rex-since-1977" uncode_shortcode_id="449705"]',
         $content,
         1
     );
+
+    return preg_replace('#\[vc_button\b(?=[^\]]*\buncode_shortcode_id="679721")[^\]]*\].*?\[/vc_button\]#s', '', $content, 1);
 });
 
 // A Git-deployed page can still have the Pie Chart in its database; load Counter assets there too.
@@ -70,7 +72,10 @@ add_filter('uncode_enqueue_jquery_counterup', static function ($enqueue) {
 add_action('wp_head', static function () {
     if (is_page('about-us')) {
         echo '<style id="rex-since-counter-style">'
-            . '.rex-since-1977{margin-bottom:36px}'
+            . '.rex-since-1977{margin-bottom:0}'
+            . '.uncell:has(> .uncont > .rex-since-1977){padding-top:40px!important;padding-bottom:40px!important}'
+            . '.uncell:has(> .uncont > .rex-since-1977) .uncont{justify-content:flex-start!important}'
+            . '.uncell:has(> .uncont > .rex-since-1977) .uncont>.vc_custom_heading_wrap{margin-top:20px!important}'
             . '.rex-since-1977>p{font-size:clamp(50px,6vw,72px)!important;line-height:1.05;margin:0!important}'
             . '.rex-since-1977 .counter-prefix{display:block;color:#74faba;font-size:15px;line-height:1.2;letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px}'
             . '.rex-since-1977 .uncode-counter{color:#fff}'
