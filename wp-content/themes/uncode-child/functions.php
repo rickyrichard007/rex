@@ -38,6 +38,37 @@ add_filter('uncode_single_content_final_output', static function ($content) {
     return $hero . $content;
 });
 
+// Keep the founder message first on small screens, but show the portrait on the left on desktop.
+add_filter('uncode_get_single_content_raw', static function ($content) {
+    if (!is_page('about-us')) {
+        return $content;
+    }
+
+    return preg_replace_callback(
+        '#\[vc_row\b[^\]]*\buncode_shortcode_id="162845"[^\]]*\]#',
+        static function ($row) {
+            return preg_replace('#\bel_class="([^"]*)"#', 'el_class="$1 rex-founder-portrait-left"', $row[0], 1);
+        },
+        $content,
+        1
+    );
+});
+
+add_action('wp_head', static function () {
+    if (is_page('about-us')) {
+        $portrait = wp_get_attachment_image_url(179943, 'full');
+        echo '<style id="rex-founder-layout">@media (min-width:960px){'
+            . '.rex-founder-portrait-left{position:relative}'
+            . '.rex-founder-portrait-left>.row-parent{width:100%;max-width:none;padding-top:100px!important;padding-bottom:100px!important}'
+            . '.rex-founder-portrait-left>.row-parent>.row-inner{display:flex;flex-direction:row-reverse}'
+            . '.rex-founder-portrait-left>.row-parent>.row-inner>.wpb_column{flex:0 0 50%;max-width:50%}'
+            . ($portrait ? '.rex-founder-portrait-left>.row-parent>.row-inner>.wpb_column:nth-child(2)>.uncol{display:none}'
+                . '.rex-founder-portrait-left:after{content:"";position:absolute;inset:-100px 50% 0 0;background:url("' . esc_url($portrait) . '") center bottom/contain no-repeat;pointer-events:none;z-index:1}' : '')
+            . '.rex-founder-portrait-left>.row-parent>.row-inner>.wpb_column:first-child>.uncol>.uncoltable>.uncell>.uncont{max-width:80%!important}'
+            . '}</style>';
+    }
+});
+
 // Fade in the About page intro section (image, headings, divider, text, button) on scroll.
 add_action('wp_head', static function () {
     if (!is_page('about-us')) {
