@@ -113,6 +113,8 @@ add_action('wp_head', static function () {
         . '.rex-about-values li>span:last-child{font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap}'
         . '.style-color-117547-bg .rex-about-values{margin-top:20px!important}'
         . '.style-color-117547-bg .rex-about-value-icon{background:rgba(255,255,255,.18);color:#fff}'
+        . '.style-color-nhtu-bg:has(.fontsize-180856-custom)>.uncont{justify-content:flex-start!important}'
+        . '#row-unique-8{background:#fff!important}#row-unique-8 .row-background{display:none!important}'
         . '@media(max-width:1700px){.rex-about-values{grid-template-columns:repeat(2,minmax(0,1fr))}}'
         . '@media(max-width:600px){.rex-about-values li{flex-direction:column;justify-content:center;gap:5px;min-height:66px;text-align:center}}'
         . '@media(max-width:380px){.rex-about-values{grid-template-columns:1fr}.rex-about-values li{flex-direction:row;min-height:42px;text-align:left}}'
